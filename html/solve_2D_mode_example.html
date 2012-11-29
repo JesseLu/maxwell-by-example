@@ -62,8 +62,10 @@ p.footer {
   color: gray;
 }
 
-  </style></head><body><div class="content"><h1>solve_2D_mode_example</h1><!--introduction--><p>Shows how an eigenmode of a 2D structure can quickly be found in Matlab.</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Create the simulation</a></li><li><a href="#2">Form matrices and function handles</a></li></ul></div><h2>Create the simulation<a name="1"></a></h2><p>We use the <tt>add_planar</tt> and <tt>stretched_coordinates</tt> functions to create our structure as well as our simulation grid.</p><pre class="codeinput">    dims = [80 80 1]; <span class="comment">% Size of the simulation.</span>
-    omega = 0.08; <span class="comment">% Frequency of the simulation.</span>
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">solve_2D_mode_example</a></li><li><a href="#3">Create the simulation</a></li><li><a href="#4">Form matrices and function handles</a></li><li><a href="#6">Run the eigenmode solver function</a></li></ul></div><h2>solve_2D_mode_example<a name="1"></a></h2><p>Shows how an eigenmode of a 2D structure can quickly be found in Matlab.</p><pre class="codeinput"><span class="comment">% Make this a function instead of a script to allow for nested function definitions.</span>
+<span class="keyword">function</span> [] = solve_2D_mode_example()
+</pre><h2>Create the simulation<a name="3"></a></h2><p>We use the <tt>add_planar</tt> and <tt>stretched_coordinates</tt> functions to create our structure as well as our simulation grid.</p><pre class="codeinput">    dims = [80 80 1]; <span class="comment">% Size of the simulation.</span>
+    omega = 0.18; <span class="comment">% Frequency of the simulation.</span>
 
     <span class="comment">% Create a ring epsilon structure.</span>
     my_shapes = {struct(<span class="string">'type'</span>, <span class="string">'rectangle'</span>, <span class="keyword">...</span>
@@ -94,46 +96,58 @@ p.footer {
     <span class="comment">% Create the s-parameters.</span>
     [s_prim, s_dual] = stretched_coordinates(omega, dims, [10 10 0]);
 
-    <span class="comment">% Create the current source.</span>
+    <span class="comment">% Create the current source this is only used to get v_guess for the mode solver.</span>
     J = {zeros(dims), zeros(dims), zeros(dims)};
     J{1}(22, 40, 1) = 1; <span class="comment">% Point source inside ring.</span>
 
     <span class="comment">% Permeability.</span>
     mu = {ones(dims), ones(dims), ones(dims)};
-</pre><img vspace="5" hspace="5" src="solve_2D_mode_example_01.png" alt=""> <h2>Form matrices and function handles<a name="2"></a></h2><p>We now form the necessary linear algebra components and function hanles to solve the system using <tt>eigenmode_solver</tt>.</p><p>We actually used a modified electromagnetic wave equation where <img src="solve_2D_mode_example_eq97801.png" alt="$F = \sqrt{\epsilon} E$">,</p><p><img src="solve_2D_mode_example_eq14019.png" alt="$$ \frac{1}{\sqrt{\epsilon}}\nabla\times\mu^{-1}\nabla\times\frac{1}{\sqrt{\epsilon}}F - \omega^2 F = 0$$"></p><pre class="codeinput">    <span class="comment">% Get ingredient matrices and vectors.</span>
+</pre><img vspace="5" hspace="5" src="solve_2D_mode_example_01.png" alt=""> <h2>Form matrices and function handles<a name="4"></a></h2><p>We now form the necessary linear algebra components and function hanles to solve the system using <tt>eigenmode_solver</tt>.</p><p>We actually used a modified electromagnetic wave equation where <img src="solve_2D_mode_example_eq97801.png" alt="$F = \sqrt{\epsilon} E$">,</p><p><img src="solve_2D_mode_example_eq14019.png" alt="$$ \frac{1}{\sqrt{\epsilon}}\nabla\times\mu^{-1}\nabla\times\frac{1}{\sqrt{\epsilon}}F - \omega^2 F = 0$$"></p><pre class="codeinput">    <span class="comment">% Get ingredient matrices and vectors.</span>
     [A1, A2, m, e, b] = maxwell_matrices(omega, s_prim, s_dual, mu, epsilon, J);
 
     <span class="comment">% Form full matrix.</span>
     n = prod(dims);
-    A = A1 * spdiags(m.^-1, 0, 3*n, 3*n) * A2 - omega^2 * spdiags(e, 0, 3*n, 3*n);
+    my_diag = @(z) spdiags(z(:), 0, numel(z), numel(z));
+    A = my_diag(e.^-0.5) * A1 * my_diag(m.^-1) * A2 * my_diag(e.^-0.5);
 
-    <span class="comment">% Solve</span>
-    x = A \ b;
-    fprintf(<span class="string">'Error: %e\n'</span>, norm(A*x-b)/norm(b));
+    <span class="comment">% Compose function handles.</span>
+    mult_A = @(x) A * x;
+    solve_A_shifted = @(lambda, b) (A - lambda * speye(3*n)) \ b;
 
-    <span class="comment">% Reshape solution and plot it.</span>
-    <span class="keyword">for</span> k = 1 : 3
-        E{k} = reshape(x((k-1)*n+1 : k*n), dims);
-
-        subplot(1, 3, k)
-        imagesc(real(E{k})'); axis <span class="string">equal</span> <span class="string">tight</span>;
-        title(xyz(k));
+    <span class="comment">% In-line function for visualization of progress.</span>
+    <span class="keyword">function</span> my_vis(lambda, v)
         colormap <span class="string">jet</span>
+        <span class="keyword">for</span> k = 1 : 3
+            E{k} = reshape(v((k-1)*n+1 : k*n), dims);
+            subplot(1, 3, k)
+            imagesc(abs(E{k})'); axis <span class="string">equal</span> <span class="string">tight</span>; <span class="comment">% abs looks better than real :).</span>
+            title(xyz(k));
+        <span class="keyword">end</span>
     <span class="keyword">end</span>
+
+    <span class="comment">% Solve to get v_guess.</span>
+    v_guess = solve_A_shifted(omega^2, b);
+    my_vis(omega^2, v_guess)
     snapnow;
-</pre><pre class="codeoutput">Error: 3.366557e-15
-</pre><img vspace="5" hspace="5" src="solve_2D_mode_example_02.png" alt=""> <p class="footer"><br>
+</pre><img vspace="5" hspace="5" src="solve_2D_mode_example_02.png" alt=""> <p>The figure above shows our initial <tt>v_guess</tt>, which we have obtained via simulation.</p><h2>Run the eigenmode solver function<a name="6"></a></h2><pre class="codeinput">    <span class="comment">% Find the eigenmode</span>
+    [lambda, v] = eigenmode_solver(mult_A, solve_A_shifted, @my_vis, v_guess, 10, 1e-6);
+    snapnow;
+</pre><img vspace="5" hspace="5" src="solve_2D_mode_example_03.png" alt=""> <p>Here we obtain one of the eigenmodes of the ring resonator.</p><pre class="codeinput"><span class="keyword">end</span>
+</pre><p class="footer"><br>
       Published with MATLAB&reg; 7.13<br></p></div><!--
 ##### SOURCE BEGIN #####
 %% solve_2D_mode_example
 % Shows how an eigenmode of a 2D structure can quickly be found in Matlab.
+
+% Make this a function instead of a script to allow for nested function definitions.
+function [] = solve_2D_mode_example()
 
 %% Create the simulation
 % We use the |add_planar| and |stretched_coordinates| functions to create our 
 % structure as well as our simulation grid.
 
     dims = [80 80 1]; % Size of the simulation.
-    omega = 0.08; % Frequency of the simulation.
+    omega = 0.18; % Frequency of the simulation.
 
     % Create a ring epsilon structure.
     my_shapes = {struct('type', 'rectangle', ...
@@ -164,7 +178,7 @@ p.footer {
     % Create the s-parameters.
     [s_prim, s_dual] = stretched_coordinates(omega, dims, [10 10 0]);
 
-    % Create the current source.
+    % Create the current source this is only used to get v_guess for the mode solver.
     J = {zeros(dims), zeros(dims), zeros(dims)};
     J{1}(22, 40, 1) = 1; % Point source inside ring.
 
@@ -186,24 +200,43 @@ p.footer {
 
     % Form full matrix.
     n = prod(dims);
-    A = A1 * spdiags(m.^-1, 0, 3*n, 3*n) * A2 - omega^2 * spdiags(e, 0, 3*n, 3*n);
+    my_diag = @(z) spdiags(z(:), 0, numel(z), numel(z));
+    A = my_diag(e.^-0.5) * A1 * my_diag(m.^-1) * A2 * my_diag(e.^-0.5);
 
-    % Solve
-    x = A \ b;
-    fprintf('Error: %e\n', norm(A*x-b)/norm(b));
+    % Compose function handles.
+    mult_A = @(x) A * x;
+    solve_A_shifted = @(lambda, b) (A - lambda * speye(3*n)) \ b;
 
-    % Reshape solution and plot it.
-    for k = 1 : 3
-        E{k} = reshape(x((k-1)*n+1 : k*n), dims);
-
-        subplot(1, 3, k)
-        imagesc(real(E{k})'); axis equal tight;
-        title(xyz(k));
+    % In-line function for visualization of progress.
+    function my_vis(lambda, v)
         colormap jet 
+        for k = 1 : 3
+            E{k} = reshape(v((k-1)*n+1 : k*n), dims);
+            subplot(1, 3, k)
+            imagesc(abs(E{k})'); axis equal tight; % abs looks better than real :).
+            title(xyz(k));
+        end
     end
+
+    % Solve to get v_guess.
+    v_guess = solve_A_shifted(omega^2, b);
+    my_vis(omega^2, v_guess)
     snapnow;
 
 %%
+% The figure above shows our initial |v_guess|, which we have obtained via simulation.
+%
+
+%% Run the eigenmode solver function
+
+    % Find the eigenmode
+    [lambda, v] = eigenmode_solver(mult_A, solve_A_shifted, @my_vis, v_guess, 10, 1e-6);
+    snapnow;
+
+%%
+% Here we obtain one of the eigenmodes of the ring resonator.
+%
+end
 
 ##### SOURCE END #####
 --></body></html>

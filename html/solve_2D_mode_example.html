@@ -62,7 +62,7 @@ p.footer {
   color: gray;
 }
 
-  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">solve_2D_mode_example</a></li><li><a href="#3">Create the simulation</a></li><li><a href="#4">Form matrices and function handles</a></li><li><a href="#6">Run the eigenmode solver function</a></li></ul></div><h2>solve_2D_mode_example<a name="1"></a></h2><p>Shows how an eigenmode of a 2D structure can quickly be found in Matlab.</p><pre class="codeinput"><span class="comment">% Make this a function instead of a script to allow for nested function definitions.</span>
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">solve_2D_mode_example</a></li><li><a href="#3">Create the simulation</a></li><li><a href="#4">Form matrices and function handles</a></li><li><a href="#6">Run the eigenmode solver function</a></li><li><a href="#8">Obtaining the right eigenvector</a></li></ul></div><h2>solve_2D_mode_example<a name="1"></a></h2><p>Shows how an eigenmode of a 2D structure can quickly be found in Matlab.</p><pre class="codeinput"><span class="comment">% Make this a function instead of a script to allow for nested function definitions.</span>
 <span class="keyword">function</span> [] = solve_2D_mode_example()
 </pre><h2>Create the simulation<a name="3"></a></h2><p>We use the <tt>add_planar</tt> and <tt>stretched_coordinates</tt> functions to create our structure as well as our simulation grid.</p><pre class="codeinput">    dims = [80 80 1]; <span class="comment">% Size of the simulation.</span>
     omega = 0.18; <span class="comment">% Frequency of the simulation.</span>
@@ -132,7 +132,20 @@ p.footer {
 </pre><img vspace="5" hspace="5" src="solve_2D_mode_example_02.png" alt=""> <p>The figure above shows our initial <tt>v_guess</tt>, which we have obtained via simulation.</p><h2>Run the eigenmode solver function<a name="6"></a></h2><pre class="codeinput">    <span class="comment">% Find the eigenmode</span>
     [lambda, v] = eigenmode_solver(mult_A, solve_A_shifted, @my_vis, v_guess, 10, 1e-6);
     snapnow;
-</pre><img vspace="5" hspace="5" src="solve_2D_mode_example_03.png" alt=""> <p>Here we obtain one of the eigenmodes of the ring resonator.</p><pre class="codeinput"><span class="keyword">end</span>
+</pre><img vspace="5" hspace="5" src="solve_2D_mode_example_03.png" alt=""> <p>Here we obtain one of the eigenmodes of the ring resonator.</p><h2>Obtaining the right eigenvector<a name="8"></a></h2><p>This is made possible through the symmetrization matrix <tt>S</tt>, via</p><p><img src="solve_2D_mode_example_eq70735.png" alt="$$ w = S^\ast v^\ast $$"></p><p><img src="solve_2D_mode_example_eq65190.png" alt="$$ w^\dagger A - \lambda w^\dagger = 0. $$"></p><pre class="codeinput">    <span class="comment">% Form symmetrization matrix S.</span>
+    [spx, spy, spz] = ndgrid(s_prim{1}, s_prim{2}, s_prim{3});
+    [sdx, sdy, sdz] = ndgrid(s_dual{1}, s_dual{2}, s_dual{3});
+
+    S = my_diag([sdx(:).*spy(:).*spz(:); <span class="keyword">...</span>
+                spx(:).*sdy(:).*spz(:); <span class="keyword">...</span>
+                spx(:).*spy(:).*sdz(:)]);
+
+    <span class="comment">% Obtain right eigenvector.</span>
+    w = conj(S * v);
+
+    fprintf(<span class="string">'Error of right eigenvector: %e\n'</span>, norm(w' * A - lambda * w')/norm(w));
+</pre><pre class="codeoutput">Error of right eigenvector: 2.047995e-08
+</pre><pre class="codeinput"><span class="keyword">end</span>
 </pre><p class="footer"><br>
       Published with MATLAB&reg; 7.13<br></p></div><!--
 ##### SOURCE BEGIN #####
@@ -236,6 +249,26 @@ function [] = solve_2D_mode_example()
 %%
 % Here we obtain one of the eigenmodes of the ring resonator.
 %
+
+%% Obtaining the right eigenvector
+% This is made possible through the symmetrization matrix |S|, via
+%
+% $$ w = S^\ast v^\ast $$
+%
+% $$ w^\dagger A - \lambda w^\dagger = 0. $$
+
+    % Form symmetrization matrix S.
+    [spx, spy, spz] = ndgrid(s_prim{1}, s_prim{2}, s_prim{3});
+    [sdx, sdy, sdz] = ndgrid(s_dual{1}, s_dual{2}, s_dual{3});
+
+    S = my_diag([sdx(:).*spy(:).*spz(:); ...
+                spx(:).*sdy(:).*spz(:); ...
+                spx(:).*spy(:).*sdz(:)]);
+     
+    % Obtain right eigenvector.
+    w = conj(S * v);
+
+    fprintf('Error of right eigenvector: %e\n', norm(w' * A - lambda * w')/norm(w));
 end
 
 ##### SOURCE END #####

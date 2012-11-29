@@ -98,4 +98,24 @@ function [] = solve_2D_mode_example()
 %%
 % Here we obtain one of the eigenmodes of the ring resonator.
 %
+
+%% Obtaining the right eigenvector
+% This is made possible through the symmetrization matrix |S|, via
+%
+% $$ w = S^\ast v^\ast $$
+%
+% $$ w^\dagger A - \lambda w^\dagger = 0. $$
+
+    % Form symmetrization matrix S.
+    [spx, spy, spz] = ndgrid(s_prim{1}, s_prim{2}, s_prim{3});
+    [sdx, sdy, sdz] = ndgrid(s_dual{1}, s_dual{2}, s_dual{3});
+
+    S = my_diag([sdx(:).*spy(:).*spz(:); ...
+                spx(:).*sdy(:).*spz(:); ...
+                spx(:).*spy(:).*sdz(:)]);
+     
+    % Obtain right eigenvector.
+    w = conj(S * v);
+
+    fprintf('Error of right eigenvector: %e\n', norm(w' * A - lambda * w')/norm(w));
 end

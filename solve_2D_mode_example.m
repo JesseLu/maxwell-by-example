@@ -1,6 +1,10 @@
 %% solve_2D_mode_example
 % Shows how an eigenmode of a 2D structure can quickly be found in Matlab.
 
+%% Description
+% Very simplay to |solve_2D_example|, except that we now solve for 
+% the eigenmode of a ring resonator.
+
 % Make this a function instead of a script to allow for nested function definitions.
 function [] = solve_2D_mode_example()
 
@@ -72,8 +76,9 @@ function [] = solve_2D_mode_example()
     % In-line function for visualization of progress.
     function my_vis(lambda, v)
         colormap jet 
+        x = v ./ sqrt(e);
         for k = 1 : 3
-            E{k} = reshape(v((k-1)*n+1 : k*n), dims);
+            E{k} = reshape(x((k-1)*n+1 : k*n), dims);
             subplot(1, 3, k)
             imagesc(abs(E{k})'); axis equal tight; % abs looks better than real :).
             title(xyz(k));

@@ -66,6 +66,10 @@ function [epsilon] = add_planar(epsilon, z_thickness, z_center, in_plane_shapes)
     % Also get doubled dimensions so we can upsample in 2D in order to take care
     % of the Yee grid offsets.
     dims = size(epsilon{1});
+    if numel(dims) == 2 % Take care of special 2D case.
+        dims = [dims, 1];
+    end
+
     dd = 2 * dims(1:2); % Doubled dimensions in 2D.
 
     epsilon_2D = zeros(dd); % We draw on this 2D grid.

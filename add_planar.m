@@ -37,17 +37,27 @@ function [epsilon] = add_planar(epsilon, z_thickness, z_center, in_plane_shapes)
 % * |epsilon| is the permittivity with the slab structure added.
 
 %% Example
+% The following code snippet, using |my_shapes| from above,
+% creates a simple slab with a large hole in the middle.
 %   
 %   epsilon = {ones(80,80,20), ones(80,80,20), ones(80,80,20)};
 %   epsilon = add_planar(epsilon, 5, 10, my_shapes); % my_shapes from code above.
 %
-%   % Test
+%   % Visualize the structure.
 %   for k = 1 : 3
 %       subplot(2, 3, k);
 %       imagesc(epsilon{k}(:,:,10)'); axis equal tight;
 %       subplot(2, 3, k+3);
 %       imagesc(squeeze(epsilon{k}(:,40,:))'); axis equal tight;
 %   end
+%
+
+%%
+% This example code produces the following figure.
+%
+%
+% <<add_planar.png>>
+%
 
 
 %% Source code

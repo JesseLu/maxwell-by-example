@@ -1,0 +1,192 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>eigenmode_solver</title><meta name="generator" content="MATLAB 7.13"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2012-11-29"><meta name="DC.source" content="eigenmode_solver.m"><style type="text/css">
+
+body {
+  background-color: white;
+  margin:10px;
+}
+
+h1 {
+  color: #990000; 
+  font-size: x-large;
+}
+
+h2 {
+  color: #990000;
+  font-size: medium;
+}
+
+/* Make the text shrink to fit narrow windows, but not stretch too far in 
+wide windows. */ 
+p,h1,h2,div.content div {
+  max-width: 600px;
+  /* Hack for IE6 */
+  width: auto !important; width: 600px;
+}
+
+pre.codeinput {
+  background: #EEEEEE;
+  padding: 10px;
+}
+@media print {
+  pre.codeinput {word-wrap:break-word; width:100%;}
+} 
+
+span.keyword {color: #0000FF}
+span.comment {color: #228B22}
+span.string {color: #A020F0}
+span.untermstring {color: #B20000}
+span.syscmd {color: #B28C00}
+
+pre.codeoutput {
+  color: #666666;
+  padding: 10px;
+}
+
+pre.error {
+  color: red;
+}
+
+p.footer {
+  text-align: right;
+  font-size: xx-small;
+  font-weight: lighter;
+  font-style: italic;
+  color: gray;
+}
+
+  </style></head><body><div class="content"><h1>eigenmode_solver</h1><!--introduction--><p>Find an eigenmode of the system , using rayleigh quotient iteration.</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Description</a></li><li><a href="#3">Input parameters</a></li><li><a href="#4">Output parameters</a></li><li><a href="#5">Example</a></li><li><a href="#7">Source code</a></li></ul></div><h2>Description<a name="1"></a></h2><p>Given an initial guess, an eigenmode of the system is found. This function does not require knowledge of the full system matrix A, only function handles for multiplication by A and finding x for (A-lambda I)x = b.</p><p>Uses the rayleigh quotient iteration algorithm as described in page 207 of Numerical Linear Algebra, Trefethen and Bau.</p><pre class="codeinput"><span class="keyword">function</span> [lambda, v] = eigenmode_solver(mult_A, solve_A_shifted, vis_current, <span class="keyword">...</span>
+                                        v_guess, max_iters, err_lim)
+</pre><h2>Input parameters<a name="3"></a></h2><div><ul><li><tt>mult_A</tt> is a function handle that returns A*x, given x.</li><li><tt>solve_A_shifted</tt> is a function handle that accepts scalar lambda and vector b   and returns the solution, x, of (A - lambda I) x = b.</li><li><tt>vis_current</tt> is a function handle that accepts lambda and v and can perform   a user-defined plotting function in order to monitor progress.</li><li><tt>v_guess</tt> is a the initial guess vector for the eigenmode.</li><li><tt>max_iters</tt> is the maximum number of iterations to allow, typically 10.</li><li><tt>err_lim</tt> is the error limit below which the algorithm successfully terminates.</li></ul></div><h2>Output parameters<a name="4"></a></h2><div><ul><li><tt>lambda</tt> and <tt>v</tt> represent the solution to <img src="eigenmode_solver_eq46174.png" alt="$(A-\lambda I)v = 0$">.</li></ul></div><h2>Example<a name="5"></a></h2><pre> % Generate a random, complex matrix and vector.
+ n = 100;
+ randn('state', 1);
+ A = randn(n) + 1i * randn(n);
+ v_guess = randn(n, 1) + 1i * randn(n, 1);</pre><pre> % Form the needed callback functions.
+ mult_A = @(x) A * x;
+ solve_A_shifted = @(shift, b) (A - shift * eye(n)) \ b;
+ vis_current = @(lambda, v) lambda; % Do nothing.</pre><pre> % Find the eigenmode and show the error as well.
+ [lambda, v] = eigenmode_solver(mult_A, solve_A_shifted, vis_current, ...
+                                 v_guess, 10, 1e-6);
+ title(sprintf('Error: %e', norm((A - lambda*eye(n))*v) / norm(v)));</pre><p>This generates the following figure</p><p><img vspace="5" hspace="5" src="eigenmode.png" alt=""> </p><h2>Source code<a name="7"></a></h2><pre class="codeinput">    <span class="comment">% Normalize guess and estimate lambda.</span>
+    v = v_guess(:) / norm(v_guess);
+    lambda = v' * mult_A(v);
+
+    <span class="comment">% Perform rayleigh iterations.</span>
+    <span class="keyword">for</span> k = 1 : max_iters+1
+
+        <span class="comment">% Compute error.</span>
+        err(k) = norm(mult_A(v) - lambda * v); <span class="comment">% Compute error.</span>
+
+        <span class="comment">% Plot error.</span>
+        vis_current(lambda, v);
+        semilogy(0:(k-1), err, <span class="string">'.-'</span>); <span class="comment">% Plot error.</span>
+        a = axis;
+        hold <span class="string">on</span>; semilogy(a(1:2), err_lim * [1 1], <span class="string">'k--'</span>); hold <span class="string">off</span>;
+        ylabel(<span class="string">'Eigenvector error'</span>); xlabel(<span class="string">'iteration'</span>); drawnow;
+
+        <span class="comment">% Check for termination condition.</span>
+        <span class="keyword">if</span> (err(k) &lt; err_lim) || (k &gt;= max_iters) <span class="comment">% Check if we're done</span>
+            <span class="keyword">break</span>
+        <span class="keyword">end</span>
+
+        <span class="comment">% Perform the rayleigh quotient update.</span>
+        w = solve_A_shifted(lambda, v); <span class="comment">% Solve for new eigenvector guess (inverse iteration).</span>
+        v = w / norm(w); <span class="comment">% Normalize.</span>
+        lambda = v' * mult_A(v); <span class="comment">% Solve for new eigenvalue guess (rayleigh quotient).</span>
+    <span class="keyword">end</span>
+</pre><p class="footer"><br>
+      Published with MATLAB&reg; 7.13<br></p></div><!--
+##### SOURCE BEGIN #####
+%% eigenmode_solver
+% Find an eigenmode of the system , using rayleigh quotient iteration.
+
+%% Description
+% Given an initial guess, an eigenmode of the system is found. 
+% This function does not require knowledge of the full system matrix A,
+% only function handles for multiplication by A and finding x for (A-lambda I)x = b.
+%
+% Uses the rayleigh quotient iteration algorithm as described in
+% page 207 of Numerical Linear Algebra, Trefethen and Bau.
+
+function [lambda, v] = eigenmode_solver(mult_A, solve_A_shifted, vis_current, ...
+                                        v_guess, max_iters, err_lim)
+
+%% Input parameters
+% * |mult_A| is a function handle that returns A*x, given x.
+% * |solve_A_shifted| is a function handle that accepts scalar lambda and vector b
+%   and returns the solution, x, of (A - lambda I) x = b.
+% * |vis_current| is a function handle that accepts lambda and v and can perform
+%   a user-defined plotting function in order to monitor progress.
+% * |v_guess| is a the initial guess vector for the eigenmode.
+% * |max_iters| is the maximum number of iterations to allow, typically 10.
+% * |err_lim| is the error limit below which the algorithm successfully terminates.
+
+%% Output parameters
+% * |lambda| and |v| represent the solution to $(A-\lambda I)v = 0$.
+
+%% Example
+%
+%   % Generate a random, complex matrix and vector.
+%   n = 100;
+%   randn('state', 1);
+%   A = randn(n) + 1i * randn(n);
+%   v_guess = randn(n, 1) + 1i * randn(n, 1);
+%
+%   % Form the needed callback functions.
+%   mult_A = @(x) A * x;
+%   solve_A_shifted = @(shift, b) (A - shift * eye(n)) \ b;
+%   vis_current = @(lambda, v) lambda; % Do nothing.
+%
+%   % Find the eigenmode and show the error as well.
+%   [lambda, v] = eigenmode_solver(mult_A, solve_A_shifted, vis_current, ...
+%                                   v_guess, 10, 1e-6);
+%   title(sprintf('Error: %e', norm((A - lambda*eye(n))*v) / norm(v))); 
+%
+
+%% 
+% This generates the following figure
+%
+% <<eigenmode.png>>
+%
+
+
+%% Source code
+    % Normalize guess and estimate lambda.
+    v = v_guess(:) / norm(v_guess);
+    lambda = v' * mult_A(v);
+
+    % Perform rayleigh iterations.
+    for k = 1 : max_iters+1
+
+        % Compute error.
+        err(k) = norm(mult_A(v) - lambda * v); % Compute error.
+
+        % Plot error.
+        vis_current(lambda, v);
+        semilogy(0:(k-1), err, '.-'); % Plot error.
+        a = axis;
+        hold on; semilogy(a(1:2), err_lim * [1 1], 'kREPLACE_WITH_DASH_DASH'); hold off;
+        ylabel('Eigenvector error'); xlabel('iteration'); drawnow; 
+
+        % Check for termination condition.
+        if (err(k) < err_lim) || (k >= max_iters) % Check if we're done
+            break
+        end
+
+        % Perform the rayleigh quotient update.
+        w = solve_A_shifted(lambda, v); % Solve for new eigenvector guess (inverse iteration).
+        v = w / norm(w); % Normalize.
+        lambda = v' * mult_A(v); % Solve for new eigenvalue guess (rayleigh quotient).
+    end
+    
+        
+
+##### SOURCE END #####
+--></body></html>

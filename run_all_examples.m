@@ -1,5 +1,25 @@
 %% Run_all_examples
-% A script that runs all the example functions in this directory
+% A script that runs examples for all the functions in this directory.
+
+%% eigenmode_solver
+
+    % Generate a random, complex matrix and vector.
+    n = 100;
+    randn('state', 1);
+    A = randn(n) + 1i * randn(n);
+    v_guess = randn(n, 1) + 1i * randn(n, 1);
+
+    % Form the needed callback functions.
+    mult_A = @(x) A * x;
+    solve_A_shifted = @(shift, b) (A - shift * eye(n)) \ b;
+    vis_current = @(lambda, v) lambda; % Do nothing.
+
+    % Find the eigenmode.
+    [lambda, v] = eigenmode_solver(mult_A, solve_A_shifted, vis_current, ...
+                                    v_guess, 10, 1e-6);
+    title(sprintf('Error: %e', norm((A - lambda*eye(n))*v) / norm(v))); 
+    snapnow;
+    return
 
 %% add_planar
 

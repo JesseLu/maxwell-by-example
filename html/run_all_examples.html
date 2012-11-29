@@ -62,7 +62,23 @@ p.footer {
   color: gray;
 }
 
-  </style></head><body><div class="content"><h1>Run_all_examples</h1><!--introduction--><p>A script that runs all the example functions in this directory</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">add_planar</a></li><li><a href="#2">maxwell_matrices</a></li><li><a href="#3">stretched_coordinates</a></li></ul></div><h2>add_planar<a name="1"></a></h2><pre class="codeinput">    <span class="comment">% For a rectangle that covers the entire grid.</span>
+  </style></head><body><div class="content"><h1>Run_all_examples</h1><!--introduction--><p>A script that runs examples for all the functions in this directory.</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">eigenmode_solver</a></li><li><a href="#2">add_planar</a></li><li><a href="#3">maxwell_matrices</a></li><li><a href="#4">stretched_coordinates</a></li></ul></div><h2>eigenmode_solver<a name="1"></a></h2><pre class="codeinput">    <span class="comment">% Generate a random, complex matrix and vector.</span>
+    n = 100;
+    randn(<span class="string">'state'</span>, 1);
+    A = randn(n) + 1i * randn(n);
+    v_guess = randn(n, 1) + 1i * randn(n, 1);
+
+    <span class="comment">% Form the needed callback functions.</span>
+    mult_A = @(x) A * x;
+    solve_A_shifted = @(shift, b) (A - shift * eye(n)) \ b;
+    vis_current = @(lambda, v) lambda; <span class="comment">% Do nothing.</span>
+
+    <span class="comment">% Find the eigenmode.</span>
+    [lambda, v] = eigenmode_solver(mult_A, solve_A_shifted, vis_current, <span class="keyword">...</span>
+                                    v_guess, 10, 1e-6);
+    title(sprintf(<span class="string">'Error: %e'</span>, norm((A - lambda*eye(n))*v) / norm(v)));
+    snapnow;
+</pre><img vspace="5" hspace="5" src="run_all_examples_01.png" alt=""> <h2>add_planar<a name="2"></a></h2><pre class="codeinput">    <span class="comment">% For a rectangle that covers the entire grid.</span>
     my_rectangle = struct(<span class="string">'type'</span>, <span class="string">'rectangle'</span>, <span class="keyword">...</span>
                      <span class="string">'position'</span>, [0 0], <span class="keyword">...</span>
                      <span class="string">'size'</span>, [1e9 1e9], <span class="keyword">...</span>
@@ -88,7 +104,7 @@ p.footer {
        imagesc(squeeze(epsilon{k}(:,40,:))'); axis <span class="string">equal</span> <span class="string">tight</span>;
     <span class="keyword">end</span>
     snapnow;
-</pre><img vspace="5" hspace="5" src="run_all_examples_01.png" alt=""> <h2>maxwell_matrices<a name="2"></a></h2><pre class="codeinput">    omega = 0.08;
+</pre><img vspace="5" hspace="5" src="run_all_examples_02.png" alt=""> <h2>maxwell_matrices<a name="3"></a></h2><pre class="codeinput">    omega = 0.08;
 
     s_prim = {ones(80,1), ones(40,1), ones(20,1)};
     s_dual = s_prim;
@@ -99,7 +115,7 @@ p.footer {
     J{2}(40,20,10) = 1; <span class="comment">% Centrally-located point source.</span>
 
     [A1, A2, m, e, b] = maxwell_matrices(omega, s_prim, s_dual, m, e, J);
-</pre><h2>stretched_coordinates<a name="3"></a></h2><pre class="codeinput">    omega = 0.08;
+</pre><h2>stretched_coordinates<a name="4"></a></h2><pre class="codeinput">    omega = 0.08;
     dims = [80 40 20];
     t_pml = [10 10 10];
     [s_prim, s_dual] = stretched_coordinates(omega, dims, t_pml);
@@ -107,7 +123,26 @@ p.footer {
       Published with MATLAB&reg; 7.13<br></p></div><!--
 ##### SOURCE BEGIN #####
 %% Run_all_examples
-% A script that runs all the example functions in this directory
+% A script that runs examples for all the functions in this directory.
+
+%% eigenmode_solver
+
+    % Generate a random, complex matrix and vector.
+    n = 100;
+    randn('state', 1);
+    A = randn(n) + 1i * randn(n);
+    v_guess = randn(n, 1) + 1i * randn(n, 1);
+
+    % Form the needed callback functions.
+    mult_A = @(x) A * x;
+    solve_A_shifted = @(shift, b) (A - shift * eye(n)) \ b;
+    vis_current = @(lambda, v) lambda; % Do nothing.
+
+    % Find the eigenmode.
+    [lambda, v] = eigenmode_solver(mult_A, solve_A_shifted, vis_current, ...
+                                    v_guess, 10, 1e-6);
+    title(sprintf('Error: %e', norm((A - lambda*eye(n))*v) / norm(v))); 
+    snapnow;
 
 %% add_planar
 

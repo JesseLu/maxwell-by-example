@@ -1,0 +1,205 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>maxwell_matrices</title><meta name="generator" content="MATLAB 7.13"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2012-11-28"><meta name="DC.source" content="maxwell_matrices.m"><style type="text/css">
+
+body {
+  background-color: white;
+  margin:10px;
+}
+
+h1 {
+  color: #990000; 
+  font-size: x-large;
+}
+
+h2 {
+  color: #990000;
+  font-size: medium;
+}
+
+/* Make the text shrink to fit narrow windows, but not stretch too far in 
+wide windows. */ 
+p,h1,h2,div.content div {
+  max-width: 600px;
+  /* Hack for IE6 */
+  width: auto !important; width: 600px;
+}
+
+pre.codeinput {
+  background: #EEEEEE;
+  padding: 10px;
+}
+@media print {
+  pre.codeinput {word-wrap:break-word; width:100%;}
+} 
+
+span.keyword {color: #0000FF}
+span.comment {color: #228B22}
+span.string {color: #A020F0}
+span.untermstring {color: #B20000}
+span.syscmd {color: #B28C00}
+
+pre.codeoutput {
+  color: #666666;
+  padding: 10px;
+}
+
+pre.error {
+  color: red;
+}
+
+p.footer {
+  text-align: right;
+  font-size: xx-small;
+  font-weight: lighter;
+  font-style: italic;
+  color: gray;
+}
+
+  </style></head><body><div class="content"><h1>maxwell_matrices</h1><!--introduction--><p>Create the relevant matrices used in the FDFD method, which Maxwell implements.</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Description</a></li><li><a href="#3">Input parameters</a></li><li><a href="#4">Get the shape.</a></li><li><a href="#5">Get the relevant derivative matrices.</a></li><li><a href="#6">Form matrices</a></li><li><a href="#7">Derivative for three dimensional space.</a></li></ul></div><h2>Description<a name="1"></a></h2><p>Converts from physics-based concepts (E-fields, permittivities, current densities) to linear algebra concepts (matrices and vectors).</p><p>To be specific, the electromagnetic wave equation that Maxwell solves is</p><p><img src="maxwell_matrices_eq02362.png" alt="$$ \nabla \times \mu^{-1} \nabla \times E - \omega^2 \epsilon E = -i \omega J $$"></p><p>which we translate term-for-term into linear algebra parlance as</p><p><img src="maxwell_matrices_eq07626.png" alt="$$ A_1 \mbox{diag}(m) A_2 x - \omega^2 \mbox{diag}(e) x = b. $$"></p><pre class="codeinput"><span class="keyword">function</span> [A1, A2, m, e, b] = maxwell_matrices(s_prim, s_dual, mu, epsilon, J)
+</pre><h2>Input parameters<a name="3"></a></h2><h2>Get the shape.<a name="4"></a></h2><pre class="codeinput">    dims = size(epsilon{1});
+    N = prod(dims);
+    my_diag = @(z) spdiags(z(:), 0, numel(z), numel(z));
+    my_blkdiag = @(z) blkdiag(my_diag(z{1}), my_diag(z{2}), my_diag(z{3}));
+</pre><h2>Get the relevant derivative matrices.<a name="5"></a></h2><pre class="codeinput">    [spx, spy, spz] = ndgrid(s_prim{1}, s_prim{2}, s_prim{3});
+    [sdx, sdy, sdz] = ndgrid(s_dual{1}, s_dual{2}, s_dual{3});
+
+    Dx = deriv(<span class="string">'x'</span>, dims); <span class="comment">% Derivative in x, y, and z directions.</span>
+    Dy = deriv(<span class="string">'y'</span>, dims);
+    Dz = deriv(<span class="string">'z'</span>, dims);
+    Z = sparse(N, N);
+
+    <span class="comment">% Forward differences (used to compute H from E).</span>
+    Dfx = my_diag(sdx.^-1) * Dx;
+    Dfy = my_diag(sdy.^-1) * Dy;
+    Dfz = my_diag(sdz.^-1) * Dz;
+
+    <span class="comment">% Backward differences (used to compute E from H).</span>
+    Dbx = -my_diag(spx.^-1) * Dx';
+    Dby = -my_diag(spy.^-1) * Dy';
+    Dbz = -my_diag(spz.^-1) * Dz';
+</pre><h2>Form matrices<a name="6"></a></h2><pre class="codeinput">    A1 = [  Z, -Dbz, Dby; <span class="keyword">...</span>
+            Dbz, Z, -Dbx; <span class="keyword">...</span>
+            -Dby, Dbx, Z];
+
+    A2 = [  Z, -Dfz, Dfy; <span class="keyword">...</span>
+            Dfz, Z, -Dfx; <span class="keyword">...</span>
+            -Dfy, Dfx, Z];
+
+    m = [mu{1}(:) ; mu{2}(:) ; mu{3}(:)];
+    e = [epsilon{1}(:) ; epsilon{2}(:) ; epsilon{3}(:)];
+
+
+    b = -i * omega * [J{1}(:) ; J{2}(:) ; J{3}(:)];
+</pre><h2>Derivative for three dimensional space.<a name="7"></a></h2><p>Note that we are making the forward derivative only. Also, we assume periodic boundary conditions.</p><pre class="codeinput"><span class="keyword">function</span> [D] = deriv(dir, shape)
+
+shift = (dir == <span class="string">'xyz'</span>); <span class="comment">% Direction of shift.</span>
+
+<span class="comment">% Get the displaced spatial markers.</span>
+my_disp = @(n, shift) mod([1:n] + shift - 1, n) + 1;
+[i, j, k] = ndgrid(my_disp(shape(1), shift(1)), <span class="keyword">...</span>
+                    my_disp(shape(2), shift(2)), <span class="keyword">...</span>
+                    my_disp(shape(3), shift(3)));
+
+<span class="comment">% Translate spatial indices into matrix indices.</span>
+N = prod(shape);
+i_ind = 1 : N;
+j_ind = i + (j-1) * shape(1) + (k-1) * shape(1) * shape(2);
+
+<span class="comment">% Create the sparse matrix.</span>
+D = sparse([i_ind(:); i_ind(:)], [i_ind(:), j_ind(:)], <span class="keyword">...</span>
+            [-ones(N,1); ones(N,1)], N, N);
+</pre><p class="footer"><br>
+      Published with MATLAB&reg; 7.13<br></p></div><!--
+##### SOURCE BEGIN #####
+%% maxwell_matrices
+% Create the relevant matrices used in the FDFD method, which Maxwell implements.
+
+%% Description
+% Converts from physics-based concepts (E-fields, permittivities, current densities)
+% to linear algebra concepts (matrices and vectors).
+%
+% To be specific, the electromagnetic wave equation that Maxwell solves is
+%
+% $$ \nabla \times \mu^{-1} \nabla \times E - \omega^2 \epsilon E = -i \omega J $$
+%
+% which we translate term-for-term into linear algebra parlance as
+%
+% $$ A_1 \mbox{diag}(m) A_2 x - \omega^2 \mbox{diag}(e) x = b. $$
+
+function [A1, A2, m, e, b] = maxwell_matrices(s_prim, s_dual, mu, epsilon, J)
+
+%% Input parameters
+
+    %% Get the shape.
+    dims = size(epsilon{1});
+    N = prod(dims);
+    my_diag = @(z) spdiags(z(:), 0, numel(z), numel(z));
+    my_blkdiag = @(z) blkdiag(my_diag(z{1}), my_diag(z{2}), my_diag(z{3}));
+
+    %% Get the relevant derivative matrices.
+    [spx, spy, spz] = ndgrid(s_prim{1}, s_prim{2}, s_prim{3});
+    [sdx, sdy, sdz] = ndgrid(s_dual{1}, s_dual{2}, s_dual{3});
+
+    Dx = deriv('x', dims); % Derivative in x, y, and z directions.
+    Dy = deriv('y', dims);
+    Dz = deriv('z', dims);
+    Z = sparse(N, N);
+
+    % Forward differences (used to compute H from E).
+    Dfx = my_diag(sdx.^-1) * Dx;
+    Dfy = my_diag(sdy.^-1) * Dy;
+    Dfz = my_diag(sdz.^-1) * Dz;
+
+    % Backward differences (used to compute E from H).
+    Dbx = -my_diag(spx.^-1) * Dx';
+    Dby = -my_diag(spy.^-1) * Dy';
+    Dbz = -my_diag(spz.^-1) * Dz';
+
+    %% Form matrices
+    A1 = [  Z, -Dbz, Dby; ...
+            Dbz, Z, -Dbx; ...
+            -Dby, Dbx, Z];
+
+    A2 = [  Z, -Dfz, Dfy; ...
+            Dfz, Z, -Dfx; ...
+            -Dfy, Dfx, Z];
+
+    m = [mu{1}(:) ; mu{2}(:) ; mu{3}(:)];
+    e = [epsilon{1}(:) ; epsilon{2}(:) ; epsilon{3}(:)];
+
+
+    b = -i * omega * [J{1}(:) ; J{2}(:) ; J{3}(:)];
+
+
+
+%% Derivative for three dimensional space.
+% Note that we are making the forward derivative only.
+% Also, we assume periodic boundary conditions.
+function [D] = deriv(dir, shape)
+
+shift = (dir == 'xyz'); % Direction of shift.
+
+% Get the displaced spatial markers.
+my_disp = @(n, shift) mod([1:n] + shift - 1, n) + 1;
+[i, j, k] = ndgrid(my_disp(shape(1), shift(1)), ...
+                    my_disp(shape(2), shift(2)), ...
+                    my_disp(shape(3), shift(3)));
+
+% Translate spatial indices into matrix indices.
+N = prod(shape);
+i_ind = 1 : N;
+j_ind = i + (j-1) * shape(1) + (k-1) * shape(1) * shape(2);
+
+% Create the sparse matrix.
+D = sparse([i_ind(:); i_ind(:)], [i_ind(:), j_ind(:)], ...
+            [-ones(N,1); ones(N,1)], N, N);
+
+##### SOURCE END #####
+--></body></html>

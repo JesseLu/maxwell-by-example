@@ -16,8 +16,8 @@ function [] = optimize_2D_mode_example()
     omega = 0.134; % Frequency of the simulation.
 
     lattice_spacing = 12;
-    p0 = lattice_spacing * [1:6]; % Starting structure parameters.
-    epsilon = my_structure(dims, p0);
+    p = lattice_spacing * [1:6]'; % Starting structure parameters.
+    epsilon = my_structure(dims, p);
    
 
 %% Create the simulation parameters
@@ -27,7 +27,7 @@ function [] = optimize_2D_mode_example()
 
     % Create the current source this is only used to get v_guess for the mode solver.
     J = {zeros(dims), zeros(dims), zeros(dims)};
-    J{2}(dims(1)/2, dims(2)/2, 1) = 1;
+    J{2}(dims(1)/2, dims(2)/2 + 1, 1) = 1;
 
     % Permeability.
     mu = {ones(dims), ones(dims), ones(dims)};
@@ -51,28 +51,71 @@ function [] = optimize_2D_mode_example()
     fprintf('v_guess error: %e \n', ...
                 norm(A * v_guess - omega^2 * (e .* v_guess) - b) / norm(b));
 
-%% eigens..
+%% Run the eigenvalue optimization routinge
     
+    % Compute the eigenmode.
     [lambda, v, w] = my_eigensolver(s_prim, s_dual, mu, epsilon, v_guess);
-    snapnow;
+%   snapnow;
 
-    fprintf('%e %e\n', norm(A*v - lambda*(e.*v))/norm(v), ...
-                        norm(w' * A - lambda * (e.' .* w'))/norm(w));
-    % Compute the derivative, dlambda_dp.
-    dp = randn(size(p0));
-    dp = 1e-0 * dp / norm(dp); 
-    epsilon1 = my_structure(dims, p0 + dp)
+%   fprintf('%e %e\n', norm(A*v - lambda*(e.*v))/norm(v), ...
+%                       norm(w' * A - lambda * (e.' .* w'))/norm(w));
 
-   % Get the perturbed eigenmode.
-    [lambda1, v1, w1] = my_eigensolver(s_prim, s_dual, mu, epsilon1, v);
-    
-    dlambda = lambda1 - lambda;
+    % Compute the derivative.
 
-    % Now try to predict it.
+    dl_de = -(lambda / (w' * (e .* v))) * (w' .* v.'); % Algebraic derivative.
+
+    % Structural derivative.
     vec = @(z) [z{1}(:); z{2}(:); z{3}(:)];
+    for k = 1 : length(p)
+        dp = zeros(size(p));
+        dp(k) = 1e-6;
+        de = vec(my_structure(dims, p + dp)) - e;
+        dl_dp(k) = dl_de * de;
+    end
+    dl_dp
+    
+    % Check derivative.
+    fun = @(p) my_eigensolver(s_prim, s_dual, mu, my_structure(dims, p), v);
+    fun(p)
+    test_derivative(fun, dl_dp, lambda, p)
 
-    de = vec(epsilon1) - vec(epsilon);
 
+%   return
+%       
+%   % Compute the derivative, dlambda_dp.
+%   dp = randn(size(p));
+%   dp = 1e0 * dp / norm(dp); 
+%   epsilon1 = my_structure(dims, p + dp);
+
+%   % Get the perturbed eigenmode.
+%   [lambda1, v1, w1] = my_eigensolver(s_prim, s_dual, mu, epsilon1, v);
+%   
+%   dlambda = lambda1 - lambda;
+
+%   % Now try to predict it.
+%   vec = @(z) [z{1}(:); z{2}(:); z{3}(:)];
+
+%   de = vec(epsilon1) - vec(epsilon);
+
+%   dl = dl_de * de;
+%   dlambda
+%   dl
+%   err = norm(dlambda - dl) / norm(dlambda)
+
+end
+
+function [err] = test_derivative(fun, df_dz, f0, z0)
+% Check a derivative.
+    
+    % Produce a random direction.
+    dz = randn(size(z0));
+    dz = 1e-1 * dz / norm(dz);
+
+    % Evaluate delta in that direction empirically
+    delta_empirical = fun(z0 + dz) - f0
+    delta_derivative = df_dz * dz
+
+    err = norm(delta_empirical - delta_derivative) / norm(delta_empirical);
 end
 
 

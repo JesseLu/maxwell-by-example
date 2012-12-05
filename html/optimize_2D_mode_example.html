@@ -6,61 +6,64 @@
    <!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>mode_optimization_example</title><meta name="generator" content="MATLAB 7.13"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2012-12-04"><meta name="DC.source" content="optimize_2D_mode_example.m"><style type="text/css">
+      --><title>mode_optimization_example</title><meta name="generator" content="MATLAB 8.0"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2012-12-04"><meta name="DC.source" content="optimize_2D_mode_example.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
 
-body {
-  background-color: white;
-  margin:10px;
-}
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
 
-h1 {
-  color: #990000; 
-  font-size: x-large;
-}
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
 
-h2 {
-  color: #990000;
-  font-size: medium;
-}
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
 
-/* Make the text shrink to fit narrow windows, but not stretch too far in 
-wide windows. */ 
-p,h1,h2,div.content div {
-  max-width: 600px;
-  /* Hack for IE6 */
-  width: auto !important; width: 600px;
-}
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img { margin-bottom:0px; } 
 
-pre.codeinput {
-  background: #EEEEEE;
-  padding: 10px;
-}
-@media print {
-  pre.codeinput {word-wrap:break-word; width:100%;}
-} 
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
 
-span.keyword {color: #0000FF}
-span.comment {color: #228B22}
-span.string {color: #A020F0}
-span.untermstring {color: #B20000}
-span.syscmd {color: #B28C00}
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
 
-pre.codeoutput {
-  color: #666666;
-  padding: 10px;
-}
+pre, tt, code { font-size:12px; }
+pre { margin:0px 0px 20px; }
+pre.error { color:red; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
 
-pre.error {
-  color: red;
-}
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
 
-p.footer {
-  text-align: right;
-  font-size: xx-small;
-  font-weight: lighter;
-  font-style: italic;
-  color: gray;
-}
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
 
   </style></head><body><div class="content"><h1>mode_optimization_example</h1><!--introduction--><p>Example of the optimization of an eigenmode.</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Description</a></li><li><a href="#3">Create the initial structure</a></li><li><a href="#4">Create the simulation parameters</a></li><li><a href="#5">Get the initial guess of the eigenmode</a></li><li><a href="#6">Run the eigenvalue optimization routinge</a></li><li><a href="#8">Source code for private functions.</a></li></ul></div><h2>Description<a name="1"></a></h2><p>Starts with the eigenmode of a beam resonator, and then varies parameters to obtain a desirable eigenvalue.</p><pre class="codeinput"><span class="comment">% Make this a function instead of a script to allow for nested function definitions.</span>
 <span class="keyword">function</span> [] = optimize_2D_mode_example()
@@ -68,7 +71,7 @@ p.footer {
     omega = 0.134; <span class="comment">% Frequency of the simulation.</span>
 
     lattice_spacing = 12;
-    p = lattice_spacing * [1:6]; <span class="comment">% Starting structure parameters.</span>
+    p = lattice_spacing * [1:6]'; <span class="comment">% Starting structure parameters.</span>
     epsilon = my_structure(dims, p);
 </pre><h2>Create the simulation parameters<a name="4"></a></h2><pre class="codeinput">    <span class="comment">% Create the s-parameters.</span>
     [s_prim, s_dual] = stretched_coordinates(omega, dims, [10 10 0]);
@@ -93,7 +96,7 @@ p.footer {
 
     fprintf(<span class="string">'v_guess error: %e \n'</span>, <span class="keyword">...</span>
                 norm(A * v_guess - omega^2 * (e .* v_guess) - b) / norm(b));
-</pre><img vspace="5" hspace="5" src="optimize_2D_mode_example_01.png" alt=""> <img vspace="5" hspace="5" src="optimize_2D_mode_example_02.png" alt=""> <pre class="codeoutput">v_guess error: 3.851009e-14 
+</pre><img vspace="5" hspace="5" src="optimize_2D_mode_example_01.png" alt=""> <img vspace="5" hspace="5" src="optimize_2D_mode_example_02.png" alt=""> <pre class="codeoutput">v_guess error: 3.843427e-14 
 </pre><h2>Run the eigenvalue optimization routinge<a name="6"></a></h2><pre class="codeinput">    <span class="comment">% Compute the eigenmode.</span>
     [lambda, v, w] = my_eigensolver(s_prim, s_dual, mu, epsilon, v_guess);
 <span class="comment">%   snapnow;</span>
@@ -113,28 +116,83 @@ p.footer {
         de = vec(my_structure(dims, p + dp)) - e;
         dl_dp(k) = dl_de * de;
     <span class="keyword">end</span>
-    <span class="keyword">return</span>
+    dl_dp
 
-    <span class="comment">% Compute the derivative, dlambda_dp.</span>
-    dp = randn(size(p));
-    dp = 1e0 * dp / norm(dp);
-    epsilon1 = my_structure(dims, p + dp);
+    <span class="comment">% Check derivative.</span>
+    fun = @(p) my_eigensolver(s_prim, s_dual, mu, my_structure(dims, p), v);
+    fun(p)
+    test_derivative(fun, dl_dp, lambda, p)
 
-    <span class="comment">% Get the perturbed eigenmode.</span>
-    [lambda1, v1, w1] = my_eigensolver(s_prim, s_dual, mu, epsilon1, v);
 
-    dlambda = lambda1 - lambda;
+<span class="comment">%   return</span>
+<span class="comment">%</span>
+<span class="comment">%   % Compute the derivative, dlambda_dp.</span>
+<span class="comment">%   dp = randn(size(p));</span>
+<span class="comment">%   dp = 1e0 * dp / norm(dp);</span>
+<span class="comment">%   epsilon1 = my_structure(dims, p + dp);</span>
 
-    <span class="comment">% Now try to predict it.</span>
-    vec = @(z) [z{1}(:); z{2}(:); z{3}(:)];
+<span class="comment">%   % Get the perturbed eigenmode.</span>
+<span class="comment">%   [lambda1, v1, w1] = my_eigensolver(s_prim, s_dual, mu, epsilon1, v);</span>
+<span class="comment">%</span>
+<span class="comment">%   dlambda = lambda1 - lambda;</span>
 
-    de = vec(epsilon1) - vec(epsilon);
+<span class="comment">%   % Now try to predict it.</span>
+<span class="comment">%   vec = @(z) [z{1}(:); z{2}(:); z{3}(:)];</span>
 
-    dl = dl_de * de;
-    dlambda
-    dl
-    err = norm(dlambda - dl) / norm(dlambda)
-</pre><pre class="codeinput"><span class="keyword">end</span>
+<span class="comment">%   de = vec(epsilon1) - vec(epsilon);</span>
+
+<span class="comment">%   dl = dl_de * de;</span>
+<span class="comment">%   dlambda</span>
+<span class="comment">%   dl</span>
+<span class="comment">%   err = norm(dlambda - dl) / norm(dlambda)</span>
+</pre><pre class="codeoutput">
+dl_dp =
+
+   1.0e-08 *
+
+  Columns 1 through 4
+
+  -0.2310 - 0.0011i  -0.0393 - 0.0005i  -0.0075 + 0.0006i  -0.0016 + 0.0000i
+
+  Columns 5 through 6
+
+  -0.0003 - 0.0001i  -0.0000 + 0.0000i
+
+
+ans =
+
+   0.0179 + 0.0000i
+
+
+delta_empirical =
+
+   2.1553e-05 + 1.3791e-08i
+
+
+delta_derivative =
+
+   2.0002e-11 - 2.1775e-14i
+
+
+ans =
+
+    1.0000
+
+</pre><img vspace="5" hspace="5" src="optimize_2D_mode_example_03.png" alt=""> <pre class="codeinput"><span class="keyword">end</span>
+
+<span class="keyword">function</span> [err] = test_derivative(fun, df_dz, f0, z0)
+<span class="comment">% Check a derivative.</span>
+
+    <span class="comment">% Produce a random direction.</span>
+    dz = randn(size(z0));
+    dz = 1e-1 * dz / norm(dz);
+
+    <span class="comment">% Evaluate delta in that direction empirically</span>
+    delta_empirical = fun(z0 + dz) - f0
+    delta_derivative = df_dz * dz
+
+    err = norm(delta_empirical - delta_derivative) / norm(delta_empirical);
+<span class="keyword">end</span>
 </pre><h2>Source code for private functions.<a name="8"></a></h2><pre class="codeinput"><span class="keyword">function</span> [epsilon] = my_structure(dims, hole_y_pos)
 <span class="comment">% Private function to create a photonic crystal beam structure.</span>
 
@@ -238,8 +296,7 @@ p.footer {
     <span class="comment">% Obtain right eigenvector.</span>
     w = conj(S * v);
 <span class="keyword">end</span>
-</pre><img vspace="5" hspace="5" src="optimize_2D_mode_example_03.png" alt=""> <p class="footer"><br>
-      Published with MATLAB&reg; 7.13<br></p></div><!--
+</pre><p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2012b</a><br></p></div><!--
 ##### SOURCE BEGIN #####
 %% mode_optimization_example
 % Example of the optimization of an eigenmode.
@@ -259,7 +316,7 @@ function [] = optimize_2D_mode_example()
     omega = 0.134; % Frequency of the simulation.
 
     lattice_spacing = 12;
-    p = lattice_spacing * [1:6]; % Starting structure parameters.
+    p = lattice_spacing * [1:6]'; % Starting structure parameters.
     epsilon = my_structure(dims, p);
    
 
@@ -315,28 +372,50 @@ function [] = optimize_2D_mode_example()
         de = vec(my_structure(dims, p + dp)) - e;
         dl_dp(k) = dl_de * de;
     end
-    return
-        
-    % Compute the derivative, dlambda_dp.
-    dp = randn(size(p));
-    dp = 1e0 * dp / norm(dp); 
-    epsilon1 = my_structure(dims, p + dp);
-
-    % Get the perturbed eigenmode.
-    [lambda1, v1, w1] = my_eigensolver(s_prim, s_dual, mu, epsilon1, v);
+    dl_dp
     
-    dlambda = lambda1 - lambda;
+    % Check derivative.
+    fun = @(p) my_eigensolver(s_prim, s_dual, mu, my_structure(dims, p), v);
+    fun(p)
+    test_derivative(fun, dl_dp, lambda, p)
 
-    % Now try to predict it.
-    vec = @(z) [z{1}(:); z{2}(:); z{3}(:)];
 
-    de = vec(epsilon1) - vec(epsilon);
+%   return
+%       
+%   % Compute the derivative, dlambda_dp.
+%   dp = randn(size(p));
+%   dp = 1e0 * dp / norm(dp); 
+%   epsilon1 = my_structure(dims, p + dp);
 
-    dl = dl_de * de;
-    dlambda
-    dl
-    err = norm(dlambda - dl) / norm(dlambda)
+%   % Get the perturbed eigenmode.
+%   [lambda1, v1, w1] = my_eigensolver(s_prim, s_dual, mu, epsilon1, v);
+%   
+%   dlambda = lambda1 - lambda;
 
+%   % Now try to predict it.
+%   vec = @(z) [z{1}(:); z{2}(:); z{3}(:)];
+
+%   de = vec(epsilon1) - vec(epsilon);
+
+%   dl = dl_de * de;
+%   dlambda
+%   dl
+%   err = norm(dlambda - dl) / norm(dlambda)
+
+end
+
+function [err] = test_derivative(fun, df_dz, f0, z0)
+% Check a derivative.
+    
+    % Produce a random direction.
+    dz = randn(size(z0));
+    dz = 1e-1 * dz / norm(dz);
+
+    % Evaluate delta in that direction empirically
+    delta_empirical = fun(z0 + dz) - f0
+    delta_derivative = df_dz * dz
+
+    err = norm(delta_empirical - delta_derivative) / norm(delta_empirical);
 end
 
 

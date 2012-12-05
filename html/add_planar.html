@@ -6,83 +6,95 @@
    <!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>add_planar</title><meta name="generator" content="MATLAB 7.13"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2012-11-28"><meta name="DC.source" content="add_planar.m"><style type="text/css">
+      --><title>add_planar</title><meta name="generator" content="MATLAB 8.0"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2012-12-04"><meta name="DC.source" content="add_planar.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
 
-body {
-  background-color: white;
-  margin:10px;
-}
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
 
-h1 {
-  color: #990000; 
-  font-size: x-large;
-}
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
 
-h2 {
-  color: #990000;
-  font-size: medium;
-}
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
 
-/* Make the text shrink to fit narrow windows, but not stretch too far in 
-wide windows. */ 
-p,h1,h2,div.content div {
-  max-width: 600px;
-  /* Hack for IE6 */
-  width: auto !important; width: 600px;
-}
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img { margin-bottom:0px; } 
 
-pre.codeinput {
-  background: #EEEEEE;
-  padding: 10px;
-}
-@media print {
-  pre.codeinput {word-wrap:break-word; width:100%;}
-} 
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
 
-span.keyword {color: #0000FF}
-span.comment {color: #228B22}
-span.string {color: #A020F0}
-span.untermstring {color: #B20000}
-span.syscmd {color: #B28C00}
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
 
-pre.codeoutput {
-  color: #666666;
-  padding: 10px;
-}
+pre, tt, code { font-size:12px; }
+pre { margin:0px 0px 20px; }
+pre.error { color:red; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
 
-pre.error {
-  color: red;
-}
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
 
-p.footer {
-  text-align: right;
-  font-size: xx-small;
-  font-weight: lighter;
-  font-style: italic;
-  color: gray;
-}
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
 
   </style></head><body><div class="content"><h1>add_planar</h1><!--introduction--><p>Add a planar structure to epsilon (permittivity).</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Description</a></li><li><a href="#2">Input parameters</a></li><li><a href="#4">Output parameters</a></li><li><a href="#5">Example</a></li><li><a href="#7">Source code</a></li><li><a href="#11">Source code for private functions</a></li></ul></div><h2>Description<a name="1"></a></h2><p>Use this to add a simple planar structure (i.e. slab) consisting only of rectanges and circles to epsilon.</p><p><tt>add_planar</tt> takes care of the mess of dealing with Yee's grid, with its non-colocated x-, y-, and z-components. A uniformly-spaced grid is assumed.</p><pre class="codeinput"><span class="keyword">function</span> [epsilon] = add_planar(epsilon, z_thickness, z_center, in_plane_shapes)
-</pre><h2>Input parameters<a name="2"></a></h2><div><ul><li><tt>epsilon</tt> is a 3-element cell array representing the x-, y-, and z-components of the permittivity respectively. Each cell element is therefore an array of size <tt>(xx, yy, zz)</tt>.</li><li><tt>z_thickness</tt> and <tt>z_center</tt> describe the thickness and center-location of the slab in grid units.</li><li><tt>in_plane_shapes</tt> is a vector of shape structures which are drawn in order.   A shape structure can be created in the following way:</li></ul></div><pre> % For a rectangle that covers the entire grid.
- my_rectangle = struct('type', 'rectangle', ...
-                    'position', [0 0], ...
-                    'size', [1e9 1e9], ...
-                    'permittivity', 12.25);</pre><pre> % For a circle.
- my_circle = struct('type', 'circle', ...
-                    'position', [0 0], ...
-                    'radius', 24, ...
-                    'permittivity', 1);</pre><pre> % Put both shapes together.
- my_shapes = {my_rectangle, my_circle};</pre><h2>Output parameters<a name="4"></a></h2><div><ul><li><tt>epsilon</tt> is the permittivity with the slab structure added.</li></ul></div><h2>Example<a name="5"></a></h2><p>The following code snippet, using <tt>my_shapes</tt> from above, creates a simple slab with a large hole in the middle.</p><pre> epsilon = {ones(80,80,20), ones(80,80,20), ones(80,80,20)};
- epsilon = add_planar(epsilon, 5, 10, my_shapes); % my_shapes from code above.</pre><pre> % Visualize the structure.
- for k = 1 : 3
-     subplot(2, 3, k);
-     imagesc(epsilon{k}(:,:,10)'); axis equal tight;
-     subplot(2, 3, k+3);
-     imagesc(squeeze(epsilon{k}(:,40,:))'); axis equal tight;
- end</pre><p>This example code produces the following figure.</p><p><img vspace="5" hspace="5" src="add_planar.png" alt=""> </p><h2>Source code<a name="7"></a></h2><pre class="codeinput">    <span class="comment">% Get the dimensions of the grid.</span>
+</pre><h2>Input parameters<a name="2"></a></h2><div><ul><li><tt>epsilon</tt> is a 3-element cell array representing the x-, y-, and z-components of the permittivity respectively. Each cell element is therefore an array of size <tt>(xx, yy, zz)</tt>.</li><li><tt>z_thickness</tt> and <tt>z_center</tt> describe the thickness and center-location of the slab in grid units.</li><li><tt>in_plane_shapes</tt> is a vector of shape structures which are drawn in order.   A shape structure can be created in the following way:</li></ul></div><pre class="language-matlab"><span class="comment">% For a rectangle that covers the entire grid.</span>
+my_rectangle = struct(<span class="string">'type'</span>, <span class="string">'rectangle'</span>, <span class="keyword">...</span>
+                   <span class="string">'position'</span>, [0 0], <span class="keyword">...</span>
+                   <span class="string">'size'</span>, [1e9 1e9], <span class="keyword">...</span>
+                   <span class="string">'permittivity'</span>, 12.25);
+</pre><pre class="language-matlab"><span class="comment">% For a circle.</span>
+my_circle = struct(<span class="string">'type'</span>, <span class="string">'circle'</span>, <span class="keyword">...</span>
+                   <span class="string">'position'</span>, [0 0], <span class="keyword">...</span>
+                   <span class="string">'radius'</span>, 24, <span class="keyword">...</span>
+                   <span class="string">'permittivity'</span>, 1);
+</pre><pre class="language-matlab"><span class="comment">% Put both shapes together.</span>
+my_shapes = {my_rectangle, my_circle};
+</pre><h2>Output parameters<a name="4"></a></h2><div><ul><li><tt>epsilon</tt> is the permittivity with the slab structure added.</li></ul></div><h2>Example<a name="5"></a></h2><p>The following code snippet, using <tt>my_shapes</tt> from above, creates a simple slab with a large hole in the middle.</p><pre class="language-matlab">epsilon = {ones(80,80,20), ones(80,80,20), ones(80,80,20)};
+epsilon = add_planar(epsilon, 5, 10, my_shapes); <span class="comment">% my_shapes from code above.</span>
+</pre><pre class="language-matlab"><span class="comment">% Visualize the structure.</span>
+<span class="keyword">for</span> k = 1 : 3
+    subplot(2, 3, k);
+    imagesc(epsilon{k}(:,:,10)'); axis <span class="string">equal</span> <span class="string">tight</span>;
+    subplot(2, 3, k+3);
+    imagesc(squeeze(epsilon{k}(:,40,:))'); axis <span class="string">equal</span> <span class="string">tight</span>;
+<span class="keyword">end</span>
+</pre><p>This example code produces the following figure.</p><p><img vspace="5" hspace="5" src="add_planar.png" alt=""> </p><h2>Source code<a name="7"></a></h2><pre class="codeinput">    <span class="comment">% Get the dimensions of the grid.</span>
     <span class="comment">% Also get doubled dimensions so we can upsample in 2D in order to take care</span>
     <span class="comment">% of the Yee grid offsets.</span>
     dims = size(epsilon{1});
+    <span class="keyword">if</span> numel(dims) == 2 <span class="comment">% Take care of special 2D case.</span>
+        dims = [dims, 1];
+    <span class="keyword">end</span>
+
     dd = 2 * dims(1:2); <span class="comment">% Doubled dimensions in 2D.</span>
 
     epsilon_2D = zeros(dd); <span class="comment">% We draw on this 2D grid.</span>
@@ -164,8 +176,7 @@ p.footer {
     <span class="keyword">end</span>
     w = weight{1}.*weight{2};
     epsilon = epsilon .* (1-w) + eps_rect .* w;
-</pre><p class="footer"><br>
-      Published with MATLAB&reg; 7.13<br></p></div><!--
+</pre><p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2012b</a><br></p></div><!--
 ##### SOURCE BEGIN #####
 %% add_planar
 % Add a planar structure to epsilon (permittivity).
@@ -235,6 +246,10 @@ function [epsilon] = add_planar(epsilon, z_thickness, z_center, in_plane_shapes)
     % Also get doubled dimensions so we can upsample in 2D in order to take care
     % of the Yee grid offsets.
     dims = size(epsilon{1});
+    if numel(dims) == 2 % Take care of special 2D case.
+        dims = [dims, 1];
+    end
+
     dd = 2 * dims(1:2); % Doubled dimensions in 2D.
 
     epsilon_2D = zeros(dd); % We draw on this 2D grid.

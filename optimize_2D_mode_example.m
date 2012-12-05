@@ -12,8 +12,11 @@ function [] = optimize_2D_mode_example()
 % We use the |add_planar| and |stretched_coordinates| functions to create our 
 % structure as well as our simulation grid.
 
+    lambda_target = 0.12^2; % Target eigenvalue.
+
     dims = [200 40 1]; % Size of the simulation.
     omega = 0.134; % Frequency of the simulation.
+    %omega = 0.18; % Frequency of the simulation.
 
     lattice_spacing = 12;
     p = lattice_spacing * [1:6]'; % Starting structure parameters.
@@ -51,75 +54,97 @@ function [] = optimize_2D_mode_example()
     fprintf('v_guess error: %e \n', ...
                 norm(A * v_guess - omega^2 * (e .* v_guess) - b) / norm(b));
 
-%% Run the eigenvalue optimization routinge
+%% Run the eigenvalue optimization routine
+
+    % Objective function.
+    f = @(l) 0.5 * norm(l - lambda_target)^2;
     
-    % Compute the eigenmode.
-    [lambda, v, w] = my_eigensolver(s_prim, s_dual, mu, epsilon, v_guess);
-%   snapnow;
-
-%   fprintf('%e %e\n', norm(A*v - lambda*(e.*v))/norm(v), ...
-%                       norm(w' * A - lambda * (e.' .* w'))/norm(w));
-
-    % Compute the derivative.
-
-    dl_de = -(lambda / (w' * (e .* v))) * (w' .* v.'); % Algebraic derivative.
-
-    % Structural derivative.
+    % Helper functions.
+    n = prod(dims);
     vec = @(z) [z{1}(:); z{2}(:); z{3}(:)];
-    for k = 1 : length(p)
-        dp = zeros(size(p));
-        dp(k) = 1e-6;
-        de = vec(my_structure(dims, p + dp)) - e;
-        dl_dp(k) = dl_de * de;
+    unvec = @(z) {reshape(z(1:n), dims), reshape(z(n+1:2*n), dims), reshape(z(2*n+1:3*n), dims)};
+
+    % Shortcut notation for getting the eigenmode.
+    my_eig = @(p, v_guess) my_eigensolver(s_prim, s_dual, mu, my_structure(dims, p), v_guess);
+
+    % Initial values.
+    [lambda, v, w] = my_eig(p, v_guess);
+    f0 = f(lambda);
+    step_len = 1e7;
+    p_best = p;
+
+    for k = 1 : 500
+        % Mark progress.
+        fprintf('%d: %1.3f, %e, ', k-1, real(sqrt(lambda)), f(lambda));
+        for l = 1 : length(p)
+            fprintf('%1.2f ', p(l));
+        end
+        fprintf('\n');
+
+        hist(k) = struct('p', p, 'f', f(lambda), 'step_len', step_len);
+        % figure(2); 
+        subplot 321; semilogy([hist(:).f], 'b.-'); ylabel('figure of merit');
+        subplot 323; semilogy([hist(:).step_len], 'b.-'); ylabel('step length');
+        E = unvec(v);
+        epsilon = my_structure(dims, p);
+        subplot 322; imagesc(abs(E{2})'); axis equal tight;
+        subplot 322; imagesc(abs(E{2})'); axis equal tight;
+        subplot 324; imagesc((epsilon{2})'); axis equal tight;
+        subplot 325;
+
+        % Compute the algebraic derivative.
+        e = vec(my_structure(dims, p));
+        dl_de = -(lambda / (w' * (e .* v))) * (w' .* v.');
+        % Compute the structural derivative.
+        for k = 1 : length(p)
+            dp = zeros(size(p));
+            dp(k) = 1;
+            de = 1e6 * (vec(my_structure(dims, p + 1e-6*dp)) - e);
+            dl_dp(k) = dl_de * de;
+        end
+        
+        % Compute the objective derivative.
+        df_dp = conj(lambda - lambda_target) * dl_dp;
+
+%         % Check the algebraic derivative.
+%         fun = @(e) my_eigensolver(s_prim, s_dual, mu, unvec(e), v);
+%         alg_err = test_derivative(fun, dl_de, lambda, e, 1e-2);
+% 
+%         % Check the structural derivative.
+%         fun = @(p) my_eig(p, v);
+%         struct_err = test_derivative(fun, dl_dp, lambda, p, 1e-2);
+% 
+%         % Check objective derivative.
+%         fun1 = @(p) my_eig(p, v);
+%         fun = @(p) 0.5 * norm(fun1(p) - lambda_target)^2;
+%         obj_err = test_derivative(fun, df_dp, f(lambda), p, 1e-2);
+% 
+%         fprintf('Derivative errors: %e, %e, %e\n', alg_err, struct_err, obj_err);
+
+        % Take a step.
+        p_n = real(p - step_len * df_dp * dp);
+
+        % Compute the new eigenmode.
+        [lambda_n, v_n, w_n] = my_eig(p_n, v);
+
+        % Decide whether or not to take the step.
+        if (f(lambda_n) <= f0)
+            p = p_n;
+            lambda = lambda_n;
+            v = v_n;
+            w = w_n;
+            f0 = f(lambda);
+        else
+            step_len = step_len/2;
+        end
+        
     end
-    dl_dp
-    
-    % Check derivative.
-    fun = @(p) my_eigensolver(s_prim, s_dual, mu, my_structure(dims, p), v);
-    fun(p)
-    test_derivative(fun, dl_dp, lambda, p)
 
-
-%   return
-%       
-%   % Compute the derivative, dlambda_dp.
-%   dp = randn(size(p));
-%   dp = 1e0 * dp / norm(dp); 
-%   epsilon1 = my_structure(dims, p + dp);
-
-%   % Get the perturbed eigenmode.
-%   [lambda1, v1, w1] = my_eigensolver(s_prim, s_dual, mu, epsilon1, v);
-%   
-%   dlambda = lambda1 - lambda;
-
-%   % Now try to predict it.
-%   vec = @(z) [z{1}(:); z{2}(:); z{3}(:)];
-
-%   de = vec(epsilon1) - vec(epsilon);
-
-%   dl = dl_de * de;
-%   dlambda
-%   dl
-%   err = norm(dlambda - dl) / norm(dlambda)
 
 end
 
-function [err] = test_derivative(fun, df_dz, f0, z0)
-% Check a derivative.
-    
-    % Produce a random direction.
-    dz = randn(size(z0));
-    dz = 1e-1 * dz / norm(dz);
+%% Source code for private functions
 
-    % Evaluate delta in that direction empirically
-    delta_empirical = fun(z0 + dz) - f0
-    delta_derivative = df_dz * dz
-
-    err = norm(delta_empirical - delta_derivative) / norm(delta_empirical);
-end
-
-
-%% Source code for private functions.
 function [epsilon] = my_structure(dims, hole_y_pos)
 % Private function to create a photonic crystal beam structure.
 
@@ -178,11 +203,12 @@ function my_plotter(x, dims)
     for k = 1 : 3
         E{k} = reshape(x((k-1)*n+1 : k*n), dims);
 
-        subplot(3, 1, k)
+        subplot(3, 2, 2*k-1)
         imagesc(abs(E{k})'); 
         axis equal tight;
         title(xyz(k));
     end
+    subplot(1, 2, 2);
 end
 
 
@@ -204,7 +230,8 @@ function [lambda, v, w] = my_eigensolver(s_prim, s_dual, mu, epsilon, v_guess)
     % Compose function handles.
     mult_A = @(x) A * x;
     solve_A_shifted = @(lambda, b) (A - lambda * speye(3*n)) \ b;
-    my_vis = @(lambda, v) my_plotter(v ./ sqrt(e), dims);
+    % my_vis = @(lambda, v) my_plotter(v ./ sqrt(e), dims);
+    my_vis = @(lambda, v) lambda; % Do nothing.
 
     % Find the eigenmode
     [lambda, v] = eigenmode_solver(mult_A, solve_A_shifted, my_vis, v_guess, 10, 1e-6);
@@ -222,5 +249,19 @@ function [lambda, v, w] = my_eigensolver(s_prim, s_dual, mu, epsilon, v_guess)
      
     % Obtain right eigenvector.
     w = conj(S * v);
+end
+
+function [err] = test_derivative(fun, df_dz, f0, z0, step_len)
+% Check a derivative.
+    
+    % Produce a random direction.
+    dz = randn(size(z0));
+    dz = step_len * dz / norm(dz);
+
+    % Evaluate delta in that direction empirically
+    delta_empirical = fun(z0 + dz) - f0;
+    delta_derivative = real(df_dz * dz);
+
+    err = norm(delta_empirical - delta_derivative) / norm(delta_empirical);
 end
 

@@ -8,7 +8,7 @@
 % factor.
 
 % Make this a function instead of a script to allow for nested function definitions.
-function [] = optimize_2D_mode_example()
+function [] = optimize_2D_multimode_example()
 
 %% Create the initial structure 
 % We use the |add_planar| and |stretched_coordinates| functions to create our 
@@ -22,7 +22,7 @@ function [] = optimize_2D_mode_example()
     spec(2) = struct(   'omega', 0.26, ...
                         'target_omega', 0.26, ...
                         'target_kappa', 0, ...
-                        'polarization', 2);
+                        'polarization', 3);
 
     dims = [200 40 1]; % Size of the simulation.
     make_structure = @(p) my_structure(dims, p);
@@ -41,7 +41,7 @@ function [] = optimize_2D_mode_example()
                             epsilon_init); 
     end
 
-    optimize_2D_modes(modes, p, dims, @(x) false, 100, @my_simulate, @(p, v) vis_progress(dims, [spec.polarization], p, v));
+    optimize_2D_modes(modes, p, dims, @(x) false, 2, @my_simulate, @(p, v) vis_progress(dims, [spec.polarization], p, v));
 end
 
 %% Source code for private functions
@@ -142,24 +142,6 @@ function [x] = my_simulate(omega, s_prim, s_dual, mu, epsilon, J)
     x = (A1 * my_diag(m.^-1) * A2 - omega^2 * my_diag(e)) \ b;
 
 end
-
-function my_plotter(x, dims)
-% Private function to visualize the electric field.
-    xyz = 'xyz';
-    colormap jet 
-    n = prod(dims);
-    for k = 1 : 3
-        E{k} = reshape(x((k-1)*n+1 : k*n), dims);
-
-        subplot(3, 2, 2*k-1)
-        imagesc(abs(E{k})'); 
-        axis equal tight;
-        title(xyz(k));
-    end
-    subplot(1, 2, 2);
-end
-
-
 
 function [lambda, v, w] = my_eigensolver(sim, vis, s_prim, s_dual, mu, epsilon, v_guess)
 % Private function to obtain the left- and right-eigenmode of the structure.

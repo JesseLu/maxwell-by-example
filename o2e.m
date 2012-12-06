@@ -1,3 +1,4 @@
+
 %% mode_optimization_example
 % Example of the optimization of an eigenmode.
 
@@ -12,150 +13,86 @@ function [] = optimize_2D_mode_example()
 %% Create the initial structure 
 % We use the |add_planar| and |stretched_coordinates| functions to create our 
 % structure as well as our simulation grid.
-
-    lambda_target = 0.18^2; % Target eigenvalue.
-    tr = 0.12;
-    ti = 1 / 3e3;
-    ti = 0;
-    r_on = 0;
+    
+    spec(1) = struct(   'omega', 0.154, ...
+                        'target_omega', 0.12, ...
+                        'target_kappa', 0, ...
+                        'polarization', 2);
+    
+    spec(2) = struct(   'omega', 0.254, ...
+                        'target_omega', 0.24, ...
+                        'target_kappa', 0, ...
+                        'polarization', 3);
 
     dims = [200 40 1]; % Size of the simulation.
-    omega = 0.154; % Frequency of the simulation.
-    %omega = 0.18; % Frequency of the simulation.
+    make_structure = @(p) my_structure(dims, p);
 
     lattice_spacing = 12;
     p = lattice_spacing * [0.75:1:6]'; % Starting structure parameters.
-    epsilon = my_structure(dims, p);
-   
+    epsilon_init = make_structure(p);
 
-%% Create the simulation parameters
-
-    % Create the s-parameters.
-    [s_prim, s_dual] = stretched_coordinates(omega, dims, [10 10 0]);
-
-    % Create the current source this is only used to get v_guess for the mode solver.
-    J = {zeros(dims), zeros(dims), zeros(dims)};
-    J{2}(dims(1)/2 + 1, dims(2)/2, 1) = 1;
-
-    % Permeability.
-    mu = {ones(dims), ones(dims), ones(dims)};
-
-    % Get matrices for error checking. 
-    [A1, A2, m, e, b] = maxwell_matrices(omega, s_prim, s_dual, mu, epsilon, J); 
-    my_diag = @(z) spdiags(z(:), 0, numel(z), numel(z));
-    A = A1 * my_diag(m.^-1) * A2;
-
-
-%% Get the initial guess of the eigenmode
-% We obtain the initial guess by performing a simulation.
-
-    v_guess = my_simulate(omega, s_prim, s_dual, mu, epsilon, J); % Simulate.
-
-    % Plot the initial structure and the intial eigenmode guess.
-    my_plotter(e, dims); colormap gray; snapnow;
-    my_plotter(v_guess, dims); snapnow;
-
-
-    fprintf('v_guess error: %e \n', ...
-                norm(A * v_guess - omega^2 * (e .* v_guess) - b) / norm(b));
-
-%% Setup for the eigenvalue optimization routine
-
-    % Objective function.
-    % f = @(l) 0.5 * norm(l - lambda_target)^2;
-    m = 2;
-
-    f = @(l) sign(m) * (abs(imag(sqrt(l))-ti)^m + r_on * abs(real(sqrt(l))-tr)^m);
-    df_dl = @(l)  sign(m) * (-1i * (m * abs(imag(sqrt(l))-ti)^(m-1) * sign(imag(sqrt(l))-ti) * 0.5*(l)^-0.5) ...
-                        + r_on * (m * abs(real(sqrt(l))-tr)^(m-1) * sign(real(sqrt(l))-tr) * 0.5*(l)^-0.5));
-
-
-    
-    % Helper functions.
-    n = prod(dims);
-    vec = @(z) [z{1}(:); z{2}(:); z{3}(:)];
-    unvec = @(z) {reshape(z(1:n), dims), reshape(z(n+1:2*n), dims), reshape(z(2*n+1:3*n), dims)};
-
-    % Shortcut notation for getting the eigenmode.
-    my_eig = @(p, v_guess) my_eigensolver(@my_simulate, @(lambda, v) lambda, s_prim, s_dual, mu, my_structure(dims, p), v_guess);
-
-    % Initial values.
-    [lambda, v, w] = my_eig(p, v_guess);
-    f_cur = f(lambda);
-    step_len = 1e0;
-    p_best = p;
-
-%% Run the eigenvalue optimization routine
-
-    for k = 1 : 20 
-
-            % Display and record the progress we have made so far.
-
-        % Print out to command-line.
-        fprintf('%d: %1.3e (%1.3f, %1.2e) [', k-1, f_cur, real(sqrt(lambda)), 1/imag(sqrt(lambda)));
-        for l = 1 : length(p)
-            fprintf('%1.2f ', p(l));
-        end
-        fprintf('\b]\n');
-
-        % Record.
-        hist(k) = struct('p', p, 'f', f_cur, 'step_len', step_len);
-
-        % Plot.
-        subplot 321; semilogy([hist(:).f], 'b.-'); ylabel('figure of merit');
-        subplot 323; semilogy([hist(:).step_len], 'b.-'); ylabel('step length');
-        E = unvec(v);
-        epsilon = my_structure(dims, p);
-        subplot 322; imagesc(abs(E{2})'); axis equal tight;
-        subplot 322; imagesc(abs(E{2})'); axis equal tight;
-        subplot 324; imagesc((epsilon{2})'); axis equal tight;
-        subplot 325;
-        snapnow;
-
-
-            % Check termination condition.
-% 
-%         if f_cur < 1e-10
-%             break
-%         end
-   
-
-            % Compute the derivative $df/dp$.
-
-        df_dp = eigenmode_derivative(lambda, v, w, @(p) my_structure(dims, p), p, df_dl);
-
-            % Update p.
-
-        % Take a step.
-        delta_p = -real(df_dp'); % Steepest-descent direction, keep p real.
-        s = step_len / max(abs(delta_p(:))); % Step distance, based on maximum parameter change.
-        p_n = p + s * delta_p; % Obtain the next value of p.
-
-        % Compute the new eigenmode.
-        [lambda_n, v_n, w_n] = my_eig(p_n, v);
-        f_n = f(lambda_n);
-
-        % Decide whether or not to keep p_n.
-        if (f_n <= f_cur) % Figure-of-merit improves, keep.
-            p = p_n;
-            lambda = lambda_n;
-            v = v_n;
-            w = w_n;
-            f_cur = f_n;
-
-            step_len = 1.05 * step_len;
-
-        else % Figure-of-merit does not improve, decrease step length.
-            step_len = step_len/2;
-        end
-        
+    for k = 1 : length(spec)
+        modes(k) = my_mode( dims, ...
+                            spec(k).omega, ...
+                            spec(k).target_omega, ...
+                            spec(k).target_kappa, ...
+                            spec(k).polarization, ...
+                            make_structure, ...
+                            epsilon_init); 
     end
 
-
+    optimize_2D_modes(modes, p, dims, @(x) false, 15, @my_simulate, @(p, v) vis_progress(dims, [spec.polarization], p, v));
 end
 
 %% Source code for private functions
 
+function [mode] = my_mode(dims, omega, omega_target, imag_omega_target, pol, make_structure, epsilon)
+
+
+    [s_prim, s_dual] = stretched_coordinates(omega, dims, [10 10 0]); % s-parameters.
+
+    J = {zeros(dims), zeros(dims), zeros(dims)};
+    J{pol}(dims(1)/2 + 1, dims(2)/2, 1) = 1; % Central current source,
+
+    mu = {ones(dims), ones(dims), ones(dims)}; % Permeability.
+
+    v_guess = my_simulate(omega, s_prim, s_dual, mu, epsilon, J); % Simulate to get the guess.
+
+    mode = struct(  'tr', omega_target, ...
+                    'ti', imag_omega_target, ...
+                    'v_init', v_guess, ...
+                    's_prim', {s_prim}, ...
+                    's_dual', {s_dual}, ...
+                    'mu', {mu}, ...
+                    'eig_vis', @(lambda, v) eig_vis(dims, pol, lambda, v), ...
+                    'make_structure', make_structure);
+end
+
+function eig_vis(dims, pol, lambda, v)
+    subplot 211; 
+    n = prod(dims);
+    unvec = @(z) {reshape(z(1:n), dims), reshape(z(n+1:2*n), dims), reshape(z(2*n+1:3*n), dims)};
+    F = unvec(v);
+    imagesc(abs(F{pol})'); axis equal tight;
+    subplot 212;
+end
+
+function vis_progress(dims, pol, p, v)
+    N = length(v);
+    n = prod(dims);
+    unvec = @(z) {reshape(z(1:n), dims), reshape(z(n+1:2*n), dims), reshape(z(2*n+1:3*n), dims)};
+    function my_plot(img_data, ind) 
+        subplot(N+1, 1, ind);
+        imagesc(abs(img_data)'); axis equal tight;
+    end
+    epsilon = my_structure(dims, p);
+    my_plot(epsilon{3}, 1);
+    for k = 1 : N
+        E = unvec(v{k});
+        my_plot(E{pol(k)}, k+1);
+    end 
+end
+ 
 function [epsilon] = my_structure(dims, hole_y_pos)
 % Private function to create a photonic crystal beam structure.
 

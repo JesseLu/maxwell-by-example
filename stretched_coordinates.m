@@ -31,6 +31,10 @@ function [s_prim, s_dual] = make_scpml(omega, dims, t_pml)
 
 %% Source code
 
+    if numel(dims) == 2 % Take care of special 2D case.
+        dims = [dims, 1];
+    end
+
     % Helper functions.
     pos = @(z) (z > 0) .* z; % Only take positive values.
     l = @(u, n, t) pos(t - u) + pos(u - (n - t)); % Distance to nearest pml boundary.

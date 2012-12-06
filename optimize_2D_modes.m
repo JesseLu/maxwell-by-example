@@ -25,11 +25,18 @@ function [] = optimize_2D_modes(modes, p, dims, term_cond, max_iters, simulate, 
         df_dl{k} = @(l) gen_df_dl(l, modes(k).tr, modes(k).ti); 
     end
 
-    function [fval, ind] = fom(lambda)
+%     function [fval, ind] = fom(lambda)
+%         for k = 1 : N
+%             fvals(k) = f{k}(lambda(k));
+%         end
+%         [fval, ind] = max(fvals);
+%     end
+
+    function [fval] = fom(lambda)
         for k = 1 : N
             fvals(k) = f{k}(lambda(k));
         end
-        [fval, ind] = max(fvals);
+        fval = sum(fvals);
     end
 
     
@@ -96,8 +103,11 @@ function [] = optimize_2D_modes(modes, p, dims, term_cond, max_iters, simulate, 
    
 
             % Compute the derivative $df/dp$.
-        [f_cur, ind] = fom(lambda);
-        df_dp = my_eigenmode_derivative(lambda(ind), v{ind}, w{ind}, @(p) modes(ind).make_structure(p), p, df_dl{k}(lambda(ind)));
+        [f_cur] = fom(lambda);
+        for l = 1 : N
+            df_dp(l,:) = my_eigenmode_derivative(lambda(l), v{l}, w{l}, @(p) modes(l).make_structure(p), p, df_dl{l}(lambda(l)));
+        end
+        df_dp = sum(df_dp, 1);
 
             % Update p.
 

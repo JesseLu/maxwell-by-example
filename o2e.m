@@ -14,21 +14,21 @@ function [] = optimize_2D_mode_example()
 % We use the |add_planar| and |stretched_coordinates| functions to create our 
 % structure as well as our simulation grid.
     
-    spec(1) = struct(   'omega', 0.154, ...
-                        'target_omega', 0.12, ...
+    spec(1) = struct(   'omega', 0.13, ...
+                        'target_omega', 0.13, ...
                         'target_kappa', 0, ...
                         'polarization', 2);
     
-    spec(2) = struct(   'omega', 0.254, ...
-                        'target_omega', 0.24, ...
+    spec(2) = struct(   'omega', 0.26, ...
+                        'target_omega', 0.26, ...
                         'target_kappa', 0, ...
-                        'polarization', 3);
+                        'polarization', 2);
 
     dims = [200 40 1]; % Size of the simulation.
     make_structure = @(p) my_structure(dims, p);
 
     lattice_spacing = 12;
-    p = lattice_spacing * [0.75:1:6]'; % Starting structure parameters.
+    p = lattice_spacing * [1:1:6]'; % Starting structure parameters.
     epsilon_init = make_structure(p);
 
     for k = 1 : length(spec)
@@ -41,7 +41,7 @@ function [] = optimize_2D_mode_example()
                             epsilon_init); 
     end
 
-    optimize_2D_modes(modes, p, dims, @(x) false, 15, @my_simulate, @(p, v) vis_progress(dims, [spec.polarization], p, v));
+    optimize_2D_modes(modes, p, dims, @(x) false, 100, @my_simulate, @(p, v) vis_progress(dims, [spec.polarization], p, v));
 end
 
 %% Source code for private functions

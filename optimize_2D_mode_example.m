@@ -2,8 +2,9 @@
 % Example of the optimization of an eigenmode.
 
 %% Description
-% Starts with the eigenmode of a beam resonator, and then varies parameters
-% to obtain a desirable eigenvalue.
+% This script varies the horizontal position of the holes of a beam resonator
+% in order to match a particular resonance frequency, and to increase quality 
+% factor.
 
 % Make this a function instead of a script to allow for nested function definitions.
 function [] = optimize_2D_mode_example()
@@ -12,9 +13,13 @@ function [] = optimize_2D_mode_example()
 % We use the |add_planar| and |stretched_coordinates| functions to create our 
 % structure as well as our simulation grid.
 
-    lambda_target = 0.12^2; % Target eigenvalue.
+    lambda_target = 0.18^2; % Target eigenvalue.
+    tr = 0.20;
+    ti = 1 / 3e3;
+    ti = 0;
+    r_on = 0;
 
-    dims = [200 40 1]; % Size of the simulation.
+    dims = [200 60 1]; % Size of the simulation.
     omega = 0.134; % Frequency of the simulation.
     %omega = 0.18; % Frequency of the simulation.
 
@@ -54,10 +59,17 @@ function [] = optimize_2D_mode_example()
     fprintf('v_guess error: %e \n', ...
                 norm(A * v_guess - omega^2 * (e .* v_guess) - b) / norm(b));
 
-%% Run the eigenvalue optimization routine
+%% Setup for the eigenvalue optimization routine
 
     % Objective function.
-    f = @(l) 0.5 * norm(l - lambda_target)^2;
+    % f = @(l) 0.5 * norm(l - lambda_target)^2;
+    m = 2;
+
+    f = @(l) sign(m) * (abs(imag(sqrt(l))-ti)^m + r_on * abs(real(sqrt(l))-tr)^m);
+    df_dl = @(l)  sign(m) * (-1i * (m * abs(imag(sqrt(l))-ti)^(m-1) * sign(imag(sqrt(l))-ti) * 0.5*(l)^-0.5) ...
+                        + r_on * (m * abs(real(sqrt(l))-tr)^(m-1) * sign(real(sqrt(l))-tr) * 0.5*(l)^-0.5));
+
+
     
     % Helper functions.
     n = prod(dims);
@@ -69,21 +81,28 @@ function [] = optimize_2D_mode_example()
 
     % Initial values.
     [lambda, v, w] = my_eig(p, v_guess);
-    f0 = f(lambda);
-    step_len = 1e7;
+    f_cur = f(lambda);
+    step_len = 1e0;
     p_best = p;
 
-    for k = 1 : 500
-        % Mark progress.
-        fprintf('%d: %1.3f, %e, ', k-1, real(sqrt(lambda)), f(lambda));
+%% Run the eigenvalue optimization routine
+
+    for k = 1 : 20 
+
+            % Display and record the progress we have made so far.
+
+        % Print out to command-line.
+        fprintf('%d: %1.3e (%1.3f, %1.2e) [', k-1, f_cur, real(sqrt(lambda)), 1/imag(sqrt(lambda)));
         for l = 1 : length(p)
             fprintf('%1.2f ', p(l));
         end
-        fprintf('\n');
+        fprintf('\b]\n');
 
-        hist(k) = struct('p', p, 'f', f(lambda), 'step_len', step_len);
-        % figure(2); 
-        subplot 321; semilogy([hist(:).f], 'b.-'); ylabel('figure of merit');
+        % Record.
+        hist(k) = struct('p', p, 'f', f_cur, 'step_len', step_len);
+
+        % Plot.
+        subplot 321; plot([hist(:).f], 'b.-'); ylabel('figure of merit');
         subplot 323; semilogy([hist(:).step_len], 'b.-'); ylabel('step length');
         E = unvec(v);
         epsilon = my_structure(dims, p);
@@ -91,10 +110,22 @@ function [] = optimize_2D_mode_example()
         subplot 322; imagesc(abs(E{2})'); axis equal tight;
         subplot 324; imagesc((epsilon{2})'); axis equal tight;
         subplot 325;
+        snapnow;
+
+
+            % Check termination condition.
+% 
+%         if f_cur < 1e-10
+%             break
+%         end
+
+
+            % Compute the derivative $df/dp$.
 
         % Compute the algebraic derivative.
         e = vec(my_structure(dims, p));
         dl_de = -(lambda / (w' * (e .* v))) * (w' .* v.');
+
         % Compute the structural derivative.
         for k = 1 : length(p)
             dp = zeros(size(p));
@@ -104,7 +135,7 @@ function [] = optimize_2D_mode_example()
         end
         
         % Compute the objective derivative.
-        df_dp = conj(lambda - lambda_target) * dl_dp;
+        df_dp = df_dl(lambda) * dl_dp;
 
 %         % Check the algebraic derivative.
 %         fun = @(e) my_eigensolver(s_prim, s_dual, mu, unvec(e), v);
@@ -116,25 +147,34 @@ function [] = optimize_2D_mode_example()
 % 
 %         % Check objective derivative.
 %         fun1 = @(p) my_eig(p, v);
-%         fun = @(p) 0.5 * norm(fun1(p) - lambda_target)^2;
+%         fun = @(p) f(fun1(p));
 %         obj_err = test_derivative(fun, df_dp, f(lambda), p, 1e-2);
 % 
 %         fprintf('Derivative errors: %e, %e, %e\n', alg_err, struct_err, obj_err);
 
+
+            % Update p.
+
         % Take a step.
-        p_n = real(p - step_len * df_dp * dp);
+        delta_p = -real(df_dp'); % Steepest-descent direction, keep p real.
+        s = step_len / max(abs(delta_p(:))); % Step distance, based on maximum parameter change.
+        p_n = p + s * delta_p; % Obtain the next value of p.
 
         % Compute the new eigenmode.
         [lambda_n, v_n, w_n] = my_eig(p_n, v);
+        f_n = f(lambda_n);
 
-        % Decide whether or not to take the step.
-        if (f(lambda_n) <= f0)
+        % Decide whether or not to keep p_n.
+        if (f_n <= f_cur) % Figure-of-merit improves, keep.
             p = p_n;
             lambda = lambda_n;
             v = v_n;
             w = w_n;
-            f0 = f(lambda);
-        else
+            f_cur = f_n;
+
+            step_len = 1.1 * step_len;
+
+        else % Figure-of-merit does not improve, decrease step length.
             step_len = step_len/2;
         end
         

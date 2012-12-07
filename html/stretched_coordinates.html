@@ -6,7 +6,7 @@
    <!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>stretched_coordinates</title><meta name="generator" content="MATLAB 8.0"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2012-12-04"><meta name="DC.source" content="stretched_coordinates.m"><style type="text/css">
+      --><title>stretched_coordinates</title><meta name="generator" content="MATLAB 8.0"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2012-12-07"><meta name="DC.source" content="stretched_coordinates.m"><style type="text/css">
 html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
 
 html { min-height:100%; margin-bottom:1px; }
@@ -70,7 +70,11 @@ table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px soli
 dims = [80 40 20];
 t_pml = [10 10 10];
 [s_prim, s_dual] = stretched_coordinates(omega, dims, t_pml);
-</pre><h2>Source code<a name="6"></a></h2><pre class="codeinput">    <span class="comment">% Helper functions.</span>
+</pre><h2>Source code<a name="6"></a></h2><pre class="codeinput">    <span class="keyword">if</span> numel(dims) == 2 <span class="comment">% Take care of special 2D case.</span>
+        dims = [dims, 1];
+    <span class="keyword">end</span>
+
+    <span class="comment">% Helper functions.</span>
     pos = @(z) (z &gt; 0) .* z; <span class="comment">% Only take positive values.</span>
     l = @(u, n, t) pos(t - u) + pos(u - (n - t)); <span class="comment">% Distance to nearest pml boundary.</span>
 
@@ -121,6 +125,10 @@ function [s_prim, s_dual] = make_scpml(omega, dims, t_pml)
 %   [s_prim, s_dual] = stretched_coordinates(omega, dims, t_pml);
 
 %% Source code
+
+    if numel(dims) == 2 % Take care of special 2D case.
+        dims = [dims, 1];
+    end
 
     % Helper functions.
     pos = @(z) (z > 0) .* z; % Only take positive values.

@@ -14,6 +14,7 @@ function [p, v] = optimize_(modes, p, dims, term_cond, max_iters, simulate, vis_
 %% The |modes| input parameter
 % The first parameter is |modes| which is an array of structures which have the 
 % following fields:
+%
 % * |tr|, the real part of the target omega,
 % * |ti|, the imaginary part of the target omega,
 % * |v_init|, the initial guess at the eigenvector,
@@ -32,9 +33,11 @@ function [p, v] = optimize_(modes, p, dims, term_cond, max_iters, simulate, vis_
 % * |vis_progress| is a function handle for visualizing the general progress of the algorithm.
 
 %% Output parameters
-% TODO
+% * |p| is the optimized parameter list.
+% * |v| is a cell-array of vectors representing the optimized E-field eigenmodes.
 
 %% Source code
+
     n = prod(dims);
     N = length(modes);
 
@@ -43,19 +46,32 @@ function [p, v] = optimize_(modes, p, dims, term_cond, max_iters, simulate, vis_
     unvec = @(z) {reshape(z(1:n), dims), reshape(z(n+1:2*n), dims), reshape(z(2*n+1:3*n), dims)};
 
 %% Initialize the objective function to be used.
-% TODO Latex this up
+% The objective function is of the form
+%
+% $$ f(\lambda) = (\mbox{Re}\sqrt{\lambda} - t_r)^2 + (\mbox{Im}\sqrt{\lambda} - t_i)^2 , $$
+%
+% for every mode, where $\sqrt{\lambda} = \omega$. 
+% That is to say, the objective of the minimization routine is to have every eigenmode at its target frequency.
+%
+% This is accomplished by computing $df/dp$ in order to find the direction of steepest-descent, 
+% and then stepping in that direction. To find $df/dp$ we will need $df/d\lambda$ which is
+%
+% $$ df(\lambda)/d\lambda =(\mbox{Re}\sqrt{\lambda} - t_r  - i(\mbox{Im}\sqrt{\lambda} - t_i))\lambda^{1/2}. $$
+%
+% The overall objective and it's derivative is simply the sum of the objective and derivative for the individual modes.
 
     % General forms of f(lambda), and its derivative.
-    gen_f = @(l, tr, ti) (abs(imag(sqrt(l))-ti)^2 + abs(real(sqrt(l))-tr)^2);
+    gen_f = @(l, tr, ti) (real(sqrt(l))-tr)^2 + (imag(sqrt(l))-ti)^2;
 
-    gen_df_dl = @(l, tr, ti) (-1i * (2 * abs(imag(sqrt(l))-ti) * sign(imag(sqrt(l))-ti) * 0.5*(l)^-0.5) ...
-                        + (2 * abs(real(sqrt(l))-tr) * sign(real(sqrt(l))-tr) * 0.5*(l)^-0.5));
+    gen_df_dl = @(l, tr, ti) ((real(sqrt(l))-tr) - 1i * (imag(sqrt(l))-ti)) * (l)^-0.5;
 
+    % For each mode, obtain its objective and derivative.
     for k = 1 : N
         f{k} = @(l) gen_f(l, modes(k).tr, modes(k).ti);
         df_dl{k} = @(l) gen_df_dl(l, modes(k).tr, modes(k).ti); 
     end
 
+    % Function to calculate the overall objective.
     function [fval] = fom(lambda)
         for k = 1 : N
             fvals(k) = f{k}(lambda(k));
@@ -64,31 +80,44 @@ function [p, v] = optimize_(modes, p, dims, term_cond, max_iters, simulate, vis_
     end
 
 
-%% Form the multiple eigenmode solving function.
-
+%% Initialize function to update all eigenmodes
+% This function uses the |simulate| function that is passed as an input parameter.
+    
+    % Form function handles for the individual modes.
     for k = 1 : N
         m = modes(k);
         ind_eigs{k} = @(p, v_guess) my_eigensolver(simulate, m.eig_vis, ...
                         m.s_prim, m.s_dual, m.mu, m.make_structure(p), v_guess);
     end
 
+    % Form function that will update all eigenmodes at once.
     function [lambda, v, w] = my_eig(p, v_guess)
         for k = 1 : N
             [lambda(k), v{k}, w{k}] = ind_eigs{k}(p, v_guess{k});
         end 
     end
 
+
+%% Initialize optimization parameters.
+
+    % Obtain the initial eigenmodes.
+    figure(3);
     [lambda, v, w] = my_eig(p, {modes.v_init});
-    % Initial values.
+
+    % Compute the initial value of f(lambda).
     f_cur = fom(lambda);
+
+    % Initial value for the step length.
     step_len = 1e0;
-    p_best = p;
+
 
 %% Run the eigenvalue optimization routine
 
     for k = 1 : max_iters+1
 
+            %
             % Display and record the progress we have made so far.
+            %
 
         % Print out to command-line.
         fprintf('%d: %1.3e ', k-1, f_cur);
@@ -106,31 +135,46 @@ function [p, v] = optimize_(modes, p, dims, term_cond, max_iters, simulate, vis_
         % Record.
         hist(k) = struct('p', p, 'f', f_cur, 'step_len', step_len);
 
-        % Plot optimization metrics.
+        % Plot current progress.
         figure(1);
         vis_progress(p, v);
 
+        % Plot optimization metrics.
         figure(2);
-        subplot 121; semilogy([hist(:).f], 'b.-'); ylabel('figure of merit');
-        subplot 122; semilogy([hist(:).step_len], 'b.-'); ylabel('step length');
+        subplot 121; semilogy(0:k-1, [hist(:).f], 'b.-'); ylabel('figure of merit');
+        subplot 122; semilogy(0:k-1, [hist(:).step_len], 'b.-'); ylabel('step length');
 
+        % Put focus on figure to be used to give status on eigenmode solve.
         figure(3);
 
+
+            %
             % Check termination condition.
+            %
+
+        if k == max_iters+1
+            break
+        end
 
         if term_cond(sqrt(lambda))
             break
         end
    
 
-            % Compute the derivative $df/dp$.
-        [f_cur] = fom(lambda);
+            %
+            % Compute the derivative df/dp.
+            %
+
+        % Calculate df/dp for every mode.
         for l = 1 : N
             df_dp(l,:) = my_eigenmode_derivative(lambda(l), v{l}, w{l}, @(p) modes(l).make_structure(p), p, df_dl{l}(lambda(l)));
         end
-        df_dp = sum(df_dp, 1);
+        df_dp = sum(df_dp, 1); % Overall value is just the sum.
 
+
+            %
             % Update p.
+            %
 
         % Take a step.
         delta_p = -real(df_dp'); % Steepest-descent direction, keep p real.
@@ -149,19 +193,17 @@ function [p, v] = optimize_(modes, p, dims, term_cond, max_iters, simulate, vis_
             w = w_n;
             f_cur = f_n;
 
-            step_len = 1.05 * step_len;
+            step_len = 1.05 * step_len; % Small increase in step length.
 
         else % Figure-of-merit does not improve, decrease step length.
             step_len = step_len/2;
         end
-        
-    end
-
+    end % main for-loop of the optimization routine.
 
 end
 
-%% Source code for private functions
 
+%% Source code for private functions
 
 
 function [lambda, v, w] = my_eigensolver(sim, vis, s_prim, s_dual, mu, epsilon, v_guess)
@@ -209,8 +251,9 @@ end
 
 
 function [df_dp] = my_eigenmode_derivative(lambda, v, w, make_structure, p, df_dl)
+% Compute df/dp.
 
-    vec = @(z) [z{1}(:); z{2}(:); z{3}(:)];
+    vec = @(z) [z{1}(:); z{2}(:); z{3}(:)]; % Helper function.
 
     % Compute the algebraic derivative.
     e = vec(make_structure(p));
@@ -226,7 +269,6 @@ function [df_dp] = my_eigenmode_derivative(lambda, v, w, make_structure, p, df_d
     
     % Compute the objective derivative.
     df_dp = df_dl * dl_dp;
-end
 
 %         % Check the algebraic derivative.
 %         fun = @(e) my_eigensolver(s_prim, s_dual, mu, unvec(e), v);
@@ -242,6 +284,8 @@ end
 %         obj_err = test_derivative(fun, df_dp, f(lambda), p, 1e-2);
 % 
 %         fprintf('Derivative errors: %e, %e, %e\n', alg_err, struct_err, obj_err);
+
+end
 
 % 
 % function [err] = test_derivative(fun, df_dz, f0, z0, step_len)

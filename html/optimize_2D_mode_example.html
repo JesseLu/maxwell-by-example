@@ -6,85 +6,83 @@
    <!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>mode_optimization_example</title><meta name="generator" content="MATLAB 8.0"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2012-12-05"><meta name="DC.source" content="optimize_2D_mode_example.m"><style type="text/css">
-html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+      --><title>mode_optimization_example</title><meta name="generator" content="MATLAB 7.13"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2012-12-06"><meta name="DC.source" content="optimize_2D_mode_example.m"><style type="text/css">
 
-html { min-height:100%; margin-bottom:1px; }
-html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
-html body td { vertical-align:top; text-align:left; }
+body {
+  background-color: white;
+  margin:10px;
+}
 
-h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
-h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
-h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+h1 {
+  color: #990000; 
+  font-size: x-large;
+}
 
-a { color:#005fce; text-decoration:none; }
-a:hover { color:#005fce; text-decoration:underline; }
-a:visited { color:#004aa0; text-decoration:none; }
+h2 {
+  color: #990000;
+  font-size: medium;
+}
 
-p { padding:0px; margin:0px 0px 20px; }
-img { padding:0px; margin:0px 0px 20px; border:none; }
-p img, pre img, tt img, li img { margin-bottom:0px; } 
+/* Make the text shrink to fit narrow windows, but not stretch too far in 
+wide windows. */ 
+p,h1,h2,div.content div {
+  max-width: 600px;
+  /* Hack for IE6 */
+  width: auto !important; width: 600px;
+}
 
-ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
-ul li { padding:0px; margin:0px 0px 7px 0px; }
-ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
-ul li ol li { list-style:decimal; }
-ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
-ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
-ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
-ol li ol li { list-style-type:lower-alpha; }
-ol li ul { padding-top:7px; }
-ol li ul li { list-style:square; }
+pre.codeinput {
+  background: #EEEEEE;
+  padding: 10px;
+}
+@media print {
+  pre.codeinput {word-wrap:break-word; width:100%;}
+} 
 
-.content { font-size:1.2em; line-height:140%; padding: 20px; }
+span.keyword {color: #0000FF}
+span.comment {color: #228B22}
+span.string {color: #A020F0}
+span.untermstring {color: #B20000}
+span.syscmd {color: #B28C00}
 
-pre, tt, code { font-size:12px; }
-pre { margin:0px 0px 20px; }
-pre.error { color:red; }
-pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
-pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.codeoutput {
+  color: #666666;
+  padding: 10px;
+}
 
-@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+pre.error {
+  color: red;
+}
 
-span.keyword { color:#0000FF }
-span.comment { color:#228B22 }
-span.string { color:#A020F0 }
-span.untermstring { color:#B20000 }
-span.syscmd { color:#B28C00 }
-
-.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
-.footer p { margin:0px; }
-.footer a { color:#878787; }
-.footer a:hover { color:#878787; text-decoration:underline; }
-.footer a:visited { color:#878787; }
-
-table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
-table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
-
-
-
-
+p.footer {
+  text-align: right;
+  font-size: xx-small;
+  font-weight: lighter;
+  font-style: italic;
+  color: gray;
+}
 
   </style></head><body><div class="content"><h1>mode_optimization_example</h1><!--introduction--><p>Example of the optimization of an eigenmode.</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Description</a></li><li><a href="#3">Create the initial structure</a></li><li><a href="#4">Create the simulation parameters</a></li><li><a href="#5">Get the initial guess of the eigenmode</a></li><li><a href="#6">Setup for the eigenvalue optimization routine</a></li><li><a href="#7">Run the eigenvalue optimization routine</a></li><li><a href="#9">Source code for private functions</a></li></ul></div><h2>Description<a name="1"></a></h2><p>This script varies the horizontal position of the holes of a beam resonator in order to match a particular resonance frequency, and to increase quality factor.</p><pre class="codeinput"><span class="comment">% Make this a function instead of a script to allow for nested function definitions.</span>
 <span class="keyword">function</span> [] = optimize_2D_mode_example()
 </pre><h2>Create the initial structure<a name="3"></a></h2><p>We use the <tt>add_planar</tt> and <tt>stretched_coordinates</tt> functions to create our structure as well as our simulation grid.</p><pre class="codeinput">    lambda_target = 0.18^2; <span class="comment">% Target eigenvalue.</span>
-    tr = 0.2;
+    tr = 0.12;
+    ti = 1 / 3e3;
     ti = 0;
-    r_on = 1;
+    r_on = 0;
 
-    dims = [200 60 1]; <span class="comment">% Size of the simulation.</span>
-    omega = 0.134; <span class="comment">% Frequency of the simulation.</span>
-    omega = 0.18; <span class="comment">% Frequency of the simulation.</span>
+    dims = [200 40 1]; <span class="comment">% Size of the simulation.</span>
+    omega = 0.154; <span class="comment">% Frequency of the simulation.</span>
+    <span class="comment">%omega = 0.18; % Frequency of the simulation.</span>
 
     lattice_spacing = 12;
-    p = lattice_spacing * [1:6]'; <span class="comment">% Starting structure parameters.</span>
+    p = lattice_spacing * [0.75:1:6]'; <span class="comment">% Starting structure parameters.</span>
     epsilon = my_structure(dims, p);
 </pre><h2>Create the simulation parameters<a name="4"></a></h2><pre class="codeinput">    <span class="comment">% Create the s-parameters.</span>
     [s_prim, s_dual] = stretched_coordinates(omega, dims, [10 10 0]);
 
     <span class="comment">% Create the current source this is only used to get v_guess for the mode solver.</span>
     J = {zeros(dims), zeros(dims), zeros(dims)};
-    J{2}(dims(1)/2, dims(2)/2 + 1, 1) = 1;
+    J{2}(dims(1)/2 + 1, dims(2)/2, 1) = 1;
 
     <span class="comment">% Permeability.</span>
     mu = {ones(dims), ones(dims), ones(dims)};
@@ -93,7 +91,7 @@ table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px soli
     [A1, A2, m, e, b] = maxwell_matrices(omega, s_prim, s_dual, mu, epsilon, J);
     my_diag = @(z) spdiags(z(:), 0, numel(z), numel(z));
     A = A1 * my_diag(m.^-1) * A2;
-</pre><h2>Get the initial guess of the eigenmode<a name="5"></a></h2><p>We obtain the initial guess by performing a simulation.</p><pre class="codeinput">    v_guess = my_solver(omega, s_prim, s_dual, mu, epsilon, J); <span class="comment">% Simulate.</span>
+</pre><h2>Get the initial guess of the eigenmode<a name="5"></a></h2><p>We obtain the initial guess by performing a simulation.</p><pre class="codeinput">    v_guess = my_simulate(omega, s_prim, s_dual, mu, epsilon, J); <span class="comment">% Simulate.</span>
 
     <span class="comment">% Plot the initial structure and the intial eigenmode guess.</span>
     my_plotter(e, dims); colormap <span class="string">gray</span>; snapnow;
@@ -102,12 +100,14 @@ table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px soli
 
     fprintf(<span class="string">'v_guess error: %e \n'</span>, <span class="keyword">...</span>
                 norm(A * v_guess - omega^2 * (e .* v_guess) - b) / norm(b));
+</pre><img vspace="5" hspace="5" src="optimize_2D_mode_example_01.png" alt=""> <img vspace="5" hspace="5" src="optimize_2D_mode_example_02.png" alt=""> <pre class="codeoutput">v_guess error: 1.041221e-15 
 </pre><h2>Setup for the eigenvalue optimization routine<a name="6"></a></h2><pre class="codeinput">    <span class="comment">% Objective function.</span>
-    f = @(l) 0.5 * norm(l - lambda_target)^2;
+    <span class="comment">% f = @(l) 0.5 * norm(l - lambda_target)^2;</span>
+    m = 2;
 
-    f = @(l) -abs(imag(sqrt(l))-ti)^-1 - r_on * abs(real(sqrt(l))-tr)^-1;
-    df_dl = @(l)  1i * (-abs(imag(sqrt(l))-ti)^-2 * sign(imag(sqrt(l))-ti) * 0.5*(l)^-0.5) <span class="keyword">...</span>
-                        - r_on * (-abs(real(sqrt(l))-tr)^-2 * sign(real(sqrt(l))-tr) * 0.5*(l)^-0.5);
+    f = @(l) sign(m) * (abs(imag(sqrt(l))-ti)^m + r_on * abs(real(sqrt(l))-tr)^m);
+    df_dl = @(l)  sign(m) * (-1i * (m * abs(imag(sqrt(l))-ti)^(m-1) * sign(imag(sqrt(l))-ti) * 0.5*(l)^-0.5) <span class="keyword">...</span>
+                        + r_on * (m * abs(real(sqrt(l))-tr)^(m-1) * sign(real(sqrt(l))-tr) * 0.5*(l)^-0.5));
 
 
 
@@ -117,14 +117,14 @@ table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px soli
     unvec = @(z) {reshape(z(1:n), dims), reshape(z(n+1:2*n), dims), reshape(z(2*n+1:3*n), dims)};
 
     <span class="comment">% Shortcut notation for getting the eigenmode.</span>
-    my_eig = @(p, v_guess) my_eigensolver(s_prim, s_dual, mu, my_structure(dims, p), v_guess);
+    my_eig = @(p, v_guess) my_eigensolver(@my_simulate, @(lambda, v) lambda, s_prim, s_dual, mu, my_structure(dims, p), v_guess);
 
     <span class="comment">% Initial values.</span>
     [lambda, v, w] = my_eig(p, v_guess);
     f_cur = f(lambda);
     step_len = 1e0;
     p_best = p;
-</pre><h2>Run the eigenvalue optimization routine<a name="7"></a></h2><pre class="codeinput">    <span class="keyword">for</span> k = 1 : 20
+</pre><img vspace="5" hspace="5" src="optimize_2D_mode_example_03.png" alt=""> <h2>Run the eigenvalue optimization routine<a name="7"></a></h2><pre class="codeinput">    <span class="keyword">for</span> k = 1 : 20
 
             <span class="comment">% Display and record the progress we have made so far.</span>
 
@@ -139,7 +139,7 @@ table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px soli
         hist(k) = struct(<span class="string">'p'</span>, p, <span class="string">'f'</span>, f_cur, <span class="string">'step_len'</span>, step_len);
 
         <span class="comment">% Plot.</span>
-        subplot <span class="string">321</span>; plot([hist(:).f], <span class="string">'b.-'</span>); ylabel(<span class="string">'figure of merit'</span>);
+        subplot <span class="string">321</span>; semilogy([hist(:).f], <span class="string">'b.-'</span>); ylabel(<span class="string">'figure of merit'</span>);
         subplot <span class="string">323</span>; semilogy([hist(:).step_len], <span class="string">'b.-'</span>); ylabel(<span class="string">'step length'</span>);
         E = unvec(v);
         epsilon = my_structure(dims, p);
@@ -174,21 +174,20 @@ table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px soli
         <span class="comment">% Compute the objective derivative.</span>
         df_dp = df_dl(lambda) * dl_dp;
 
-        <span class="comment">% Check the algebraic derivative.</span>
-        fun = @(e) my_eigensolver(s_prim, s_dual, mu, unvec(e), v);
-        alg_err = test_derivative(fun, dl_de, lambda, e, 1e-2);
-
-        <span class="comment">% Check the structural derivative.</span>
-        fun = @(p) my_eig(p, v);
-        struct_err = test_derivative(fun, dl_dp, lambda, p, 1e-2);
-
-        <span class="comment">% Check objective derivative.</span>
-        fun1 = @(p) my_eig(p, v);
-        fun = @(p) f(fun1(p));
-        obj_err = test_derivative(fun, df_dp, f(lambda), p, 1e-2);
-
-        fprintf(<span class="string">'Derivative errors: %e, %e, %e\n'</span>, alg_err, struct_err, obj_err);
-
+<span class="comment">%         % Check the algebraic derivative.</span>
+<span class="comment">%         fun = @(e) my_eigensolver(s_prim, s_dual, mu, unvec(e), v);</span>
+<span class="comment">%         alg_err = test_derivative(fun, dl_de, lambda, e, 1e-2);</span>
+<span class="comment">%</span>
+<span class="comment">%         % Check the structural derivative.</span>
+<span class="comment">%         fun = @(p) my_eig(p, v);</span>
+<span class="comment">%         struct_err = test_derivative(fun, dl_dp, lambda, p, 1e-2);</span>
+<span class="comment">%</span>
+<span class="comment">%         % Check objective derivative.</span>
+<span class="comment">%         fun1 = @(p) my_eig(p, v);</span>
+<span class="comment">%         fun = @(p) f(fun1(p));</span>
+<span class="comment">%         obj_err = test_derivative(fun, df_dp, f(lambda), p, 1e-2);</span>
+<span class="comment">%</span>
+<span class="comment">%         fprintf('Derivative errors: %e, %e, %e\n', alg_err, struct_err, obj_err);</span>
 
             <span class="comment">% Update p.</span>
 
@@ -209,14 +208,34 @@ table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px soli
             w = w_n;
             f_cur = f_n;
 
-            step_len = 1.1 * step_len;
+            step_len = 1.05 * step_len;
 
         <span class="keyword">else</span> <span class="comment">% Figure-of-merit does not improve, decrease step length.</span>
             step_len = step_len/2;
         <span class="keyword">end</span>
 
     <span class="keyword">end</span>
-</pre><pre class="codeinput"><span class="keyword">end</span>
+</pre><pre class="codeoutput">0: 4.593e-07 (0.111, 1.48e+03) [9.00 21.00 33.00 45.00 57.00 69.00]
+</pre><img vspace="5" hspace="5" src="optimize_2D_mode_example_04.png" alt=""> <pre class="codeoutput">1: 5.414e-08 (0.112, 4.30e+03) [9.37 21.14 32.53 44.05 56.69 70.00]
+</pre><img vspace="5" hspace="5" src="optimize_2D_mode_example_05.png" alt=""> <pre class="codeoutput">2: 2.540e-08 (0.116, 6.27e+03) [9.85 21.29 31.65 43.00 56.61 70.86]
+</pre><img vspace="5" hspace="5" src="optimize_2D_mode_example_06.png" alt=""> <pre class="codeoutput">3: 2.540e-08 (0.116, 6.27e+03) [9.85 21.29 31.65 43.00 56.61 70.86]
+</pre><img vspace="5" hspace="5" src="optimize_2D_mode_example_07.png" alt=""> <pre class="codeoutput">4: 2.311e-08 (0.115, 6.58e+03) [9.86 20.81 32.20 42.78 56.61 70.75]
+</pre><img vspace="5" hspace="5" src="optimize_2D_mode_example_08.png" alt=""> <pre class="codeoutput">5: 1.847e-08 (0.115, 7.36e+03) [10.10 20.66 31.62 42.93 56.69 70.65]
+</pre><img vspace="5" hspace="5" src="optimize_2D_mode_example_09.png" alt=""> <pre class="codeoutput">6: 1.847e-08 (0.115, 7.36e+03) [10.10 20.66 31.62 42.93 56.69 70.65]
+</pre><img vspace="5" hspace="5" src="optimize_2D_mode_example_10.png" alt=""> <pre class="codeoutput">7: 1.594e-08 (0.115, 7.92e+03) [9.96 20.35 31.87 42.68 56.60 70.60]
+</pre><img vspace="5" hspace="5" src="optimize_2D_mode_example_11.png" alt=""> <pre class="codeoutput">8: 1.594e-08 (0.115, 7.92e+03) [9.96 20.35 31.87 42.68 56.60 70.60]
+</pre><img vspace="5" hspace="5" src="optimize_2D_mode_example_12.png" alt=""> <pre class="codeoutput">9: 1.522e-08 (0.115, 8.11e+03) [10.07 20.21 31.71 42.66 56.61 70.59]
+</pre><img vspace="5" hspace="5" src="optimize_2D_mode_example_13.png" alt=""> <pre class="codeoutput">10: 1.522e-08 (0.115, 8.11e+03) [10.07 20.21 31.71 42.66 56.61 70.59]
+</pre><img vspace="5" hspace="5" src="optimize_2D_mode_example_14.png" alt=""> <pre class="codeoutput">11: 1.509e-08 (0.115, 8.14e+03) [10.01 20.19 31.76 42.57 56.63 70.58]
+</pre><img vspace="5" hspace="5" src="optimize_2D_mode_example_15.png" alt=""> <pre class="codeoutput">12: 1.497e-08 (0.116, 8.17e+03) [10.06 20.10 31.73 42.56 56.67 70.54]
+</pre><img vspace="5" hspace="5" src="optimize_2D_mode_example_16.png" alt=""> <pre class="codeoutput">13: 1.475e-08 (0.115, 8.24e+03) [9.96 20.06 31.78 42.50 56.58 70.50]
+</pre><img vspace="5" hspace="5" src="optimize_2D_mode_example_17.png" alt=""> <pre class="codeoutput">14: 1.462e-08 (0.116, 8.27e+03) [10.01 19.96 31.72 42.59 56.55 70.55]
+</pre><img vspace="5" hspace="5" src="optimize_2D_mode_example_18.png" alt=""> <pre class="codeoutput">15: 1.385e-08 (0.116, 8.50e+03) [9.93 19.86 31.79 42.52 56.52 70.50]
+</pre><img vspace="5" hspace="5" src="optimize_2D_mode_example_19.png" alt=""> <pre class="codeoutput">16: 1.337e-08 (0.116, 8.65e+03) [9.95 19.75 31.78 42.48 56.50 70.46]
+</pre><img vspace="5" hspace="5" src="optimize_2D_mode_example_20.png" alt=""> <pre class="codeoutput">17: 1.304e-08 (0.116, 8.76e+03) [9.93 19.64 31.79 42.50 56.47 70.47]
+</pre><img vspace="5" hspace="5" src="optimize_2D_mode_example_21.png" alt=""> <pre class="codeoutput">18: 1.304e-08 (0.116, 8.76e+03) [9.93 19.64 31.79 42.50 56.47 70.47]
+</pre><img vspace="5" hspace="5" src="optimize_2D_mode_example_22.png" alt=""> <pre class="codeoutput">19: 1.301e-08 (0.116, 8.77e+03) [9.91 19.63 31.81 42.45 56.51 70.48]
+</pre><img vspace="5" hspace="5" src="optimize_2D_mode_example_23.png" alt=""> <img vspace="5" hspace="5" src="optimize_2D_mode_example_24.png" alt=""> <pre class="codeinput"><span class="keyword">end</span>
 </pre><h2>Source code for private functions<a name="9"></a></h2><pre class="codeinput"><span class="keyword">function</span> [epsilon] = my_structure(dims, hole_y_pos)
 <span class="comment">% Private function to create a photonic crystal beam structure.</span>
 
@@ -255,7 +274,7 @@ table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px soli
 <span class="keyword">end</span>
 
 
-<span class="keyword">function</span> [x] = my_solver(omega, s_prim, s_dual, mu, epsilon, J)
+<span class="keyword">function</span> [x] = my_simulate(omega, s_prim, s_dual, mu, epsilon, J)
 <span class="comment">% Private function to simulate. Used to get initial guess.</span>
 
     <span class="comment">% Get matrices.</span>
@@ -285,28 +304,33 @@ table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px soli
 
 
 
-<span class="keyword">function</span> [lambda, v, w] = my_eigensolver(s_prim, s_dual, mu, epsilon, v_guess)
+<span class="keyword">function</span> [lambda, v, w] = my_eigensolver(sim, vis, s_prim, s_dual, mu, epsilon, v_guess)
 <span class="comment">% Private function to obtain the left- and right-eigenmode of the structure.</span>
 
     <span class="comment">% Get ingredient matrices and vectors.</span>
     [A1, A2, m, e] = maxwell_matrices(0, s_prim, s_dual, mu, epsilon, epsilon);
 
-    <span class="comment">% Form full matrix.</span>
-    <span class="comment">% Note that we actually form the matrix for F, where F = sqrt(e) E.</span>
     dims = size(epsilon{1});
     n = prod(dims);
     my_diag = @(z) spdiags(z(:), 0, numel(z), numel(z));
+    unvec = @(z) {reshape(z(1:n), dims), reshape(z(n+1:2*n), dims), reshape(z(2*n+1:3*n), dims)};
+
+    <span class="comment">% Form full matrix.</span>
+    <span class="comment">% Note that we actually form the matrix for F, where F = sqrt(e) E.</span>
     A = my_diag(e.^-0.5) * A1 * my_diag(m.^-1) * A2 * my_diag(e.^-0.5);
     v_guess = sqrt(e) .* v_guess; <span class="comment">% Convert from F-field to E-field.</span>
 
     <span class="comment">% Compose function handles.</span>
     mult_A = @(x) A * x;
-    solve_A_shifted = @(lambda, b) (A - lambda * speye(3*n)) \ b;
-    <span class="comment">% my_vis = @(lambda, v) my_plotter(v ./ sqrt(e), dims);</span>
-    my_vis = @(lambda, v) lambda; <span class="comment">% Do nothing.</span>
+
+    <span class="keyword">function</span> [x] = solve_A_shifted(lambda, b) <span class="comment">% This is an F-field solver.</span>
+        omega = sqrt(lambda);
+        J = unvec(-i * omega * b);
+        x = sqrt(e) .* sim(omega, s_prim, s_dual, mu, epsilon, J);
+    <span class="keyword">end</span>
 
     <span class="comment">% Find the eigenmode</span>
-    [lambda, v] = eigenmode_solver(mult_A, solve_A_shifted, my_vis, v_guess, 10, 1e-6);
+    [lambda, v] = eigenmode_solver(mult_A, @solve_A_shifted, vis, v_guess, 10, 1e-6);
 
     <span class="comment">% Convert v from F-field to E-field.</span>
     v = v ./ sqrt(e);
@@ -323,6 +347,8 @@ table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px soli
     w = conj(S * v);
 <span class="keyword">end</span>
 
+
+
 <span class="keyword">function</span> [err] = test_derivative(fun, df_dz, f0, z0, step_len)
 <span class="comment">% Check a derivative.</span>
 
@@ -336,7 +362,8 @@ table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px soli
 
     err = norm(delta_empirical - delta_derivative) / norm(delta_empirical);
 <span class="keyword">end</span>
-</pre><p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2012b</a><br></p></div><!--
+</pre><p class="footer"><br>
+      Published with MATLAB&reg; 7.13<br></p></div><!--
 ##### SOURCE BEGIN #####
 %% mode_optimization_example
 % Example of the optimization of an eigenmode.
@@ -354,16 +381,17 @@ function [] = optimize_2D_mode_example()
 % structure as well as our simulation grid.
 
     lambda_target = 0.18^2; % Target eigenvalue.
-    tr = 0.2;
+    tr = 0.12;
+    ti = 1 / 3e3;
     ti = 0;
-    r_on = 1;
+    r_on = 0;
 
-    dims = [200 60 1]; % Size of the simulation.
-    omega = 0.134; % Frequency of the simulation.
-    omega = 0.18; % Frequency of the simulation.
+    dims = [200 40 1]; % Size of the simulation.
+    omega = 0.154; % Frequency of the simulation.
+    %omega = 0.18; % Frequency of the simulation.
 
     lattice_spacing = 12;
-    p = lattice_spacing * [1:6]'; % Starting structure parameters.
+    p = lattice_spacing * [0.75:1:6]'; % Starting structure parameters.
     epsilon = my_structure(dims, p);
    
 
@@ -374,7 +402,7 @@ function [] = optimize_2D_mode_example()
 
     % Create the current source this is only used to get v_guess for the mode solver.
     J = {zeros(dims), zeros(dims), zeros(dims)};
-    J{2}(dims(1)/2, dims(2)/2 + 1, 1) = 1;
+    J{2}(dims(1)/2 + 1, dims(2)/2, 1) = 1;
 
     % Permeability.
     mu = {ones(dims), ones(dims), ones(dims)};
@@ -388,7 +416,7 @@ function [] = optimize_2D_mode_example()
 %% Get the initial guess of the eigenmode
 % We obtain the initial guess by performing a simulation.
 
-    v_guess = my_solver(omega, s_prim, s_dual, mu, epsilon, J); % Simulate.
+    v_guess = my_simulate(omega, s_prim, s_dual, mu, epsilon, J); % Simulate.
 
     % Plot the initial structure and the intial eigenmode guess.
     my_plotter(e, dims); colormap gray; snapnow;
@@ -401,11 +429,12 @@ function [] = optimize_2D_mode_example()
 %% Setup for the eigenvalue optimization routine
 
     % Objective function.
-    f = @(l) 0.5 * norm(l - lambda_target)^2;
+    % f = @(l) 0.5 * norm(l - lambda_target)^2;
+    m = 2;
 
-    f = @(l) -abs(imag(sqrt(l))-ti)^-1 - r_on * abs(real(sqrt(l))-tr)^-1;
-    df_dl = @(l)  1i * (-abs(imag(sqrt(l))-ti)^-2 * sign(imag(sqrt(l))-ti) * 0.5*(l)^-0.5) ...
-                        - r_on * (-abs(real(sqrt(l))-tr)^-2 * sign(real(sqrt(l))-tr) * 0.5*(l)^-0.5);
+    f = @(l) sign(m) * (abs(imag(sqrt(l))-ti)^m + r_on * abs(real(sqrt(l))-tr)^m);
+    df_dl = @(l)  sign(m) * (-1i * (m * abs(imag(sqrt(l))-ti)^(m-1) * sign(imag(sqrt(l))-ti) * 0.5*(l)^-0.5) ...
+                        + r_on * (m * abs(real(sqrt(l))-tr)^(m-1) * sign(real(sqrt(l))-tr) * 0.5*(l)^-0.5));
 
 
     
@@ -415,7 +444,7 @@ function [] = optimize_2D_mode_example()
     unvec = @(z) {reshape(z(1:n), dims), reshape(z(n+1:2*n), dims), reshape(z(2*n+1:3*n), dims)};
 
     % Shortcut notation for getting the eigenmode.
-    my_eig = @(p, v_guess) my_eigensolver(s_prim, s_dual, mu, my_structure(dims, p), v_guess);
+    my_eig = @(p, v_guess) my_eigensolver(@my_simulate, @(lambda, v) lambda, s_prim, s_dual, mu, my_structure(dims, p), v_guess);
 
     % Initial values.
     [lambda, v, w] = my_eig(p, v_guess);
@@ -440,7 +469,7 @@ function [] = optimize_2D_mode_example()
         hist(k) = struct('p', p, 'f', f_cur, 'step_len', step_len);
 
         % Plot.
-        subplot 321; plot([hist(:).f], 'b.-'); ylabel('figure of merit');
+        subplot 321; semilogy([hist(:).f], 'b.-'); ylabel('figure of merit');
         subplot 323; semilogy([hist(:).step_len], 'b.-'); ylabel('step length');
         E = unvec(v);
         epsilon = my_structure(dims, p);
@@ -456,7 +485,7 @@ function [] = optimize_2D_mode_example()
 %         if f_cur < 1e-10
 %             break
 %         end
-
+   
 
             % Compute the derivative $df/dp$.
 
@@ -475,21 +504,20 @@ function [] = optimize_2D_mode_example()
         % Compute the objective derivative.
         df_dp = df_dl(lambda) * dl_dp;
 
-        % Check the algebraic derivative.
-        fun = @(e) my_eigensolver(s_prim, s_dual, mu, unvec(e), v);
-        alg_err = test_derivative(fun, dl_de, lambda, e, 1e-2);
-
-        % Check the structural derivative.
-        fun = @(p) my_eig(p, v);
-        struct_err = test_derivative(fun, dl_dp, lambda, p, 1e-2);
-
-        % Check objective derivative.
-        fun1 = @(p) my_eig(p, v);
-        fun = @(p) f(fun1(p));
-        obj_err = test_derivative(fun, df_dp, f(lambda), p, 1e-2);
-
-        fprintf('Derivative errors: %e, %e, %e\n', alg_err, struct_err, obj_err);
-
+%         % Check the algebraic derivative.
+%         fun = @(e) my_eigensolver(s_prim, s_dual, mu, unvec(e), v);
+%         alg_err = test_derivative(fun, dl_de, lambda, e, 1e-2);
+% 
+%         % Check the structural derivative.
+%         fun = @(p) my_eig(p, v);
+%         struct_err = test_derivative(fun, dl_dp, lambda, p, 1e-2);
+% 
+%         % Check objective derivative.
+%         fun1 = @(p) my_eig(p, v);
+%         fun = @(p) f(fun1(p));
+%         obj_err = test_derivative(fun, df_dp, f(lambda), p, 1e-2);
+% 
+%         fprintf('Derivative errors: %e, %e, %e\n', alg_err, struct_err, obj_err);
 
             % Update p.
 
@@ -510,7 +538,7 @@ function [] = optimize_2D_mode_example()
             w = w_n;
             f_cur = f_n;
 
-            step_len = 1.1 * step_len;
+            step_len = 1.05 * step_len;
 
         else % Figure-of-merit does not improve, decrease step length.
             step_len = step_len/2;
@@ -561,7 +589,7 @@ function [epsilon] = my_structure(dims, hole_y_pos)
 end
 
 
-function [x] = my_solver(omega, s_prim, s_dual, mu, epsilon, J)
+function [x] = my_simulate(omega, s_prim, s_dual, mu, epsilon, J)
 % Private function to simulate. Used to get initial guess.
 
     % Get matrices.
@@ -591,28 +619,33 @@ end
 
 
 
-function [lambda, v, w] = my_eigensolver(s_prim, s_dual, mu, epsilon, v_guess)
+function [lambda, v, w] = my_eigensolver(sim, vis, s_prim, s_dual, mu, epsilon, v_guess)
 % Private function to obtain the left- and right-eigenmode of the structure.
     
     % Get ingredient matrices and vectors.
     [A1, A2, m, e] = maxwell_matrices(0, s_prim, s_dual, mu, epsilon, epsilon); 
 
-    % Form full matrix.
-    % Note that we actually form the matrix for F, where F = sqrt(e) E.
     dims = size(epsilon{1});
     n = prod(dims);
     my_diag = @(z) spdiags(z(:), 0, numel(z), numel(z));
+    unvec = @(z) {reshape(z(1:n), dims), reshape(z(n+1:2*n), dims), reshape(z(2*n+1:3*n), dims)};
+
+    % Form full matrix.
+    % Note that we actually form the matrix for F, where F = sqrt(e) E.
     A = my_diag(e.^-0.5) * A1 * my_diag(m.^-1) * A2 * my_diag(e.^-0.5);
     v_guess = sqrt(e) .* v_guess; % Convert from F-field to E-field.
 
     % Compose function handles.
     mult_A = @(x) A * x;
-    solve_A_shifted = @(lambda, b) (A - lambda * speye(3*n)) \ b;
-    % my_vis = @(lambda, v) my_plotter(v ./ sqrt(e), dims);
-    my_vis = @(lambda, v) lambda; % Do nothing.
 
+    function [x] = solve_A_shifted(lambda, b) % This is an F-field solver.
+        omega = sqrt(lambda);
+        J = unvec(-i * omega * b);
+        x = sqrt(e) .* sim(omega, s_prim, s_dual, mu, epsilon, J);
+    end
+        
     % Find the eigenmode
-    [lambda, v] = eigenmode_solver(mult_A, solve_A_shifted, my_vis, v_guess, 10, 1e-6);
+    [lambda, v] = eigenmode_solver(mult_A, @solve_A_shifted, vis, v_guess, 10, 1e-6);
  
     % Convert v from F-field to E-field.
     v = v ./ sqrt(e);
@@ -629,6 +662,8 @@ function [lambda, v, w] = my_eigensolver(s_prim, s_dual, mu, epsilon, v_guess)
     w = conj(S * v);
 end
 
+
+
 function [err] = test_derivative(fun, df_dz, f0, z0, step_len)
 % Check a derivative.
     
@@ -642,7 +677,6 @@ function [err] = test_derivative(fun, df_dz, f0, z0, step_len)
 
     err = norm(delta_empirical - delta_derivative) / norm(delta_empirical);
 end
-
 
 ##### SOURCE END #####
 --></body></html>

@@ -1,35 +1,49 @@
-
-%% mode_optimization_example
-% Example of the optimization of an eigenmode.
+%% optimize_2D_multimode_example
+% Example of the optimization of multiple eigenmodes.
 
 %% Description
 % This script varies the horizontal position of the holes of a beam resonator
-% in order to match a particular resonance frequency, and to increase quality 
-% factor.
+% in order to match multiple resonance frequencies.
 
 % Make this a function instead of a script to allow for nested function definitions.
 function [] = optimize_2D_multimode_example()
 
-%% Create the initial structure 
-% We use the |add_planar| and |stretched_coordinates| functions to create our 
-% structure as well as our simulation grid.
-    
+%% Simple specification of the optimization problem
+% * |omega| is the frequency used to obtain the initial guess.
+% * |target_omega| is the desired value of the real part of eigenfrequency.
+% * |target_kappa| is the desired value of the imaginary part of eigenfrequency.
+% * |polarization| is the polarization component at the center of the resonator.
+%
+% We later use |my_mode| to make these more detailed.
+
     spec(1) = struct(   'omega', 0.13, ...
                         'target_omega', 0.13, ...
                         'target_kappa', 0, ...
                         'polarization', 2);
     
-    spec(2) = struct(   'omega', 0.26, ...
-                        'target_omega', 0.26, ...
+    spec(2) = struct(   'omega', 0.22, ...
+                        'target_omega', 0.22, ...
+                        'target_kappa', 0, ...
+                        'polarization', 2);
+    
+    spec(3) = struct(   'omega', 0.16, ...
+                        'target_omega', 0.16, ...
                         'target_kappa', 0, ...
                         'polarization', 3);
 
+%% Initialize structure
+
     dims = [200 40 1]; % Size of the simulation.
-    make_structure = @(p) my_structure(dims, p);
+    make_structure = @(p) my_structure(dims, p); % Function handle to create structure from parameters.
 
     lattice_spacing = 12;
     p = lattice_spacing * [1:1:6]'; % Starting structure parameters.
+
     epsilon_init = make_structure(p);
+
+
+%% Create the detailed specification
+% This specification includes running a simulation to obtain the initial guess.
 
     for k = 1 : length(spec)
         modes(k) = my_mode( dims, ...
@@ -41,13 +55,61 @@ function [] = optimize_2D_multimode_example()
                             epsilon_init); 
     end
 
-    optimize_2D_modes(modes, p, dims, @(x) false, 2, @my_simulate, @(p, v) vis_progress(dims, [spec.polarization], p, v));
+
+%% Optimize!
+% The results below show that the frequencies have mostly converged to their targets.
+
+    max_iters = 5;
+    optimize_modes(modes, p, dims, @(x) false, max_iters, @my_simulate, @(p, v) vis_progress(dims, [spec.polarization], p, v));
 end
 
+
 %% Source code for private functions
+ 
+function [epsilon] = my_structure(dims, hole_y_pos)
+% Private function to create a photonic crystal beam structure.
+
+    % First create the beam surrounded by air.
+    my_shapes = {struct('type', 'rectangle', ...
+                        'position', [0 0], ...
+                        'size', [1e9 1e9], ...
+                        'permittivity', 1), ...
+                struct('type', 'rectangle', ...
+                        'position', [0 0], ...
+                        'size', [1e9 12], ...
+                        'permittivity', 12.25)};
+
+    hole_radius = 4; % Hard-coded in (for now atleast).
+
+    % Create symmetric hole patterns around the center of the cavity.
+    for k = 1 : length(hole_y_pos)
+        my_shapes{end+1} = struct('type', 'circle', ...
+                                'position', [hole_y_pos(k) 0], ...
+                                'radius', hole_radius, ...
+                                'permittivity', 1);
+        my_shapes{end+1} = struct('type', 'circle', ...
+                                'position', [-hole_y_pos(k) 0], ...
+                                'radius', hole_radius, ...
+                                'permittivity', 1);
+    end
+
+    % "Capping" layer to prevent holes from entering PML.
+    for k = [-1, 1]
+        my_shapes{end+1} = struct('type', 'rectangle', ...
+                                'position', [k*dims(1)/2 0], ...
+                                'size', [20 2*hole_radius+1], ...
+                                'permittivity', 12.25);
+    end
+
+    epsilon = {ones(dims), ones(dims), ones(dims)}; % Initial value of epsilon.
+
+    % Actually create the structure.
+    epsilon = add_planar(epsilon, 1e9, 1, my_shapes); 
+end
+
 
 function [mode] = my_mode(dims, omega, omega_target, imag_omega_target, pol, make_structure, epsilon)
-
+% Create the detailed specification.
 
     [s_prim, s_dual] = stretched_coordinates(omega_target + 1i * imag_omega_target, dims, [10 10 0]); % s-parameters.
 
@@ -68,69 +130,6 @@ function [mode] = my_mode(dims, omega, omega_target, imag_omega_target, pol, mak
                     'make_structure', make_structure);
 end
 
-function eig_vis(dims, pol, lambda, v)
-    subplot 211; 
-    n = prod(dims);
-    unvec = @(z) {reshape(z(1:n), dims), reshape(z(n+1:2*n), dims), reshape(z(2*n+1:3*n), dims)};
-    F = unvec(v);
-    imagesc(abs(F{pol})'); axis equal tight;
-    subplot 212;
-end
-
-function vis_progress(dims, pol, p, v)
-    N = length(v);
-    n = prod(dims);
-    unvec = @(z) {reshape(z(1:n), dims), reshape(z(n+1:2*n), dims), reshape(z(2*n+1:3*n), dims)};
-    function my_plot(img_data, ind) 
-        subplot(N+1, 1, ind);
-        imagesc(abs(img_data)'); axis equal tight;
-    end
-    epsilon = my_structure(dims, p);
-    my_plot(epsilon{3}, 1);
-    for k = 1 : N
-        E = unvec(v{k});
-        my_plot(E{pol(k)}, k+1);
-    end 
-end
- 
-function [epsilon] = my_structure(dims, hole_y_pos)
-% Private function to create a photonic crystal beam structure.
-
-    my_shapes = {struct('type', 'rectangle', ...
-                        'position', [0 0], ...
-                        'size', [1e9 1e9], ...
-                        'permittivity', 1), ...
-                struct('type', 'rectangle', ...
-                        'position', [0 0], ...
-                        'size', [1e9 12], ...
-                        'permittivity', 12.25)};
-
-    hole_radius = 4;
-
-    for k = 1 : length(hole_y_pos)
-        my_shapes{end+1} = struct('type', 'circle', ...
-                                'position', [hole_y_pos(k) 0], ...
-                                'radius', hole_radius, ...
-                                'permittivity', 1);
-        my_shapes{end+1} = struct('type', 'circle', ...
-                                'position', [-hole_y_pos(k) 0], ...
-                                'radius', hole_radius, ...
-                                'permittivity', 1);
-    end
-
-    for k = [-1, 1]
-        my_shapes{end+1} = struct('type', 'rectangle', ...
-                                'position', [k*dims(1)/2 0], ...
-                                'size', [20 2*hole_radius+1], ...
-                                'permittivity', 12.25);
-    end
-
-    epsilon = {ones(dims), ones(dims), ones(dims)};
-    epsilon = add_planar(epsilon, 1e9, 1, my_shapes);
-
-end
-
-
 function [x] = my_simulate(omega, s_prim, s_dual, mu, epsilon, J)
 % Private function to simulate. Used to get initial guess.
 
@@ -143,47 +142,33 @@ function [x] = my_simulate(omega, s_prim, s_dual, mu, epsilon, J)
 
 end
 
-function [lambda, v, w] = my_eigensolver(sim, vis, s_prim, s_dual, mu, epsilon, v_guess)
-% Private function to obtain the left- and right-eigenmode of the structure.
-    
-    % Get ingredient matrices and vectors.
-    [A1, A2, m, e] = maxwell_matrices(0, s_prim, s_dual, mu, epsilon, epsilon); 
-
-    dims = size(epsilon{1});
+function eig_vis(dims, pol, lambda, v)
+% Visualization function for the eigenmode solve.
+    subplot 211; 
     n = prod(dims);
-    my_diag = @(z) spdiags(z(:), 0, numel(z), numel(z));
     unvec = @(z) {reshape(z(1:n), dims), reshape(z(n+1:2*n), dims), reshape(z(2*n+1:3*n), dims)};
-
-    % Form full matrix.
-    % Note that we actually form the matrix for F, where F = sqrt(e) E.
-    A = my_diag(e.^-0.5) * A1 * my_diag(m.^-1) * A2 * my_diag(e.^-0.5);
-    v_guess = sqrt(e) .* v_guess; % Convert from F-field to E-field.
-
-    % Compose function handles.
-    mult_A = @(x) A * x;
-
-    function [x] = solve_A_shifted(lambda, b) % This is an F-field solver.
-        omega = sqrt(lambda);
-        J = unvec(-i * omega * b);
-        x = sqrt(e) .* sim(omega, s_prim, s_dual, mu, epsilon, J);
-    end
-        
-    % Find the eigenmode
-    [lambda, v] = eigenmode_solver(mult_A, @solve_A_shifted, vis, v_guess, 10, 1e-6);
- 
-    % Convert v from F-field to E-field.
-    v = v ./ sqrt(e);
-
-    % Form symmetrization matrix S to obtain right-eigenmode w.  
-    [spx, spy, spz] = ndgrid(s_prim{1}, s_prim{2}, s_prim{3});
-    [sdx, sdy, sdz] = ndgrid(s_dual{1}, s_dual{2}, s_dual{3});
-
-    S = my_diag([sdx(:).*spy(:).*spz(:); ...
-                spx(:).*sdy(:).*spz(:); ...
-                spx(:).*spy(:).*sdz(:)]);
-     
-    % Obtain right eigenvector.
-    w = conj(S * v);
+    F = unvec(v);
+    imagesc(abs(F{pol})'); axis equal tight; title('F-field of mode');
+    subplot 212;
 end
 
+function vis_progress(dims, pol, p, v)
+% Displays the current eigenmodes and structure.
+    N = length(v);
+    n = prod(dims);
+    unvec = @(z) {reshape(z(1:n), dims), reshape(z(n+1:2*n), dims), reshape(z(2*n+1:3*n), dims)};
+
+    function my_plot(img_data, ind, ytext) 
+        subplot(N+1, 1, ind);
+        imagesc(abs(img_data)'); axis equal tight;
+        ylabel(ytext);
+    end
+
+    epsilon = my_structure(dims, p);
+    my_plot(epsilon{3}, 1, 'structure');
+    for k = 1 : N
+        E = unvec(v{k});
+        my_plot(E{pol(k)}, k+1, ['mode ', num2str(k)]);
+    end 
+end
 

@@ -49,7 +49,7 @@ end
 function [mode] = my_mode(dims, omega, omega_target, imag_omega_target, pol, make_structure, epsilon)
 
 
-    [s_prim, s_dual] = stretched_coordinates(omega, dims, [10 10 0]); % s-parameters.
+    [s_prim, s_dual] = stretched_coordinates(omega_target + 1i * imag_omega_target, dims, [10 10 0]); % s-parameters.
 
     J = {zeros(dims), zeros(dims), zeros(dims)};
     J{pol}(dims(1)/2 + 1, dims(2)/2, 1) = 1; % Central current source,

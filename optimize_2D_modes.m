@@ -1,18 +1,49 @@
-%% mode_optimization_example
-% Example of the optimization of an eigenmode.
+%% optimize_modes
+% Optimizes multiple eigenmodes of a structure.
 
 %% Description
-% This script varies the horizontal position of the holes of a beam resonator
-% in order to match a particular resonance frequency, and to increase quality 
-% factor.
+% This function varies structural parameters in an attempt to obtain multiple
+% eigenmodes at the target frequencies.
+%
+% For an example of how to use this (somewhat involved) function, please see 
+% |optimize_2D_multimode_example|.
 
 % Make this a function instead of a script to allow for nested function definitions.
-function [] = optimize_2D_modes(modes, p, dims, term_cond, max_iters, simulate, vis_progress)
+function [p, v] = optimize_(modes, p, dims, term_cond, max_iters, simulate, vis_progress)
 
+%% The |modes| input parameter
+% The first parameter is |modes| which is an array of structures which have the 
+% following fields:
+% * |tr|, the real part of the target omega,
+% * |ti|, the imaginary part of the target omega,
+% * |v_init|, the initial guess at the eigenvector,
+% * |s_prim| and |s_dual|, the s-parameters to use with this mode,
+% * |mu|, constant permittivity for this mode,
+% * |eig_vis|, function handle for displaying progress of eigenmode solves, and
+% * |make_structure|, function handle for creating structures from a set of parameters.
+
+%% Other input parameters
+%
+% * |p| is the initial set of structural parameters,
+% * |dims| is the dimensions of the grid,
+% * |term_cond| is a function handle that determines whether the termination condition has been met,
+% * |max_iters| is the maximum number of iterations to run the optimization,
+% * |simulate| is a function handle that is used to simulate structures,
+% * |vis_progress| is a function handle for visualizing the general progress of the algorithm.
+
+%% Output parameters
+% TODO
+
+%% Source code
     n = prod(dims);
     N = length(modes);
 
-%% Initialize objective function
+    % Helper functions.
+    vec = @(z) [z{1}(:); z{2}(:); z{3}(:)];
+    unvec = @(z) {reshape(z(1:n), dims), reshape(z(n+1:2*n), dims), reshape(z(2*n+1:3*n), dims)};
+
+%% Initialize the objective function to be used.
+% TODO Latex this up
 
     % General forms of f(lambda), and its derivative.
     gen_f = @(l, tr, ti) (abs(imag(sqrt(l))-ti)^2 + abs(real(sqrt(l))-tr)^2);
@@ -25,13 +56,6 @@ function [] = optimize_2D_modes(modes, p, dims, term_cond, max_iters, simulate, 
         df_dl{k} = @(l) gen_df_dl(l, modes(k).tr, modes(k).ti); 
     end
 
-%     function [fval, ind] = fom(lambda)
-%         for k = 1 : N
-%             fvals(k) = f{k}(lambda(k));
-%         end
-%         [fval, ind] = max(fvals);
-%     end
-
     function [fval] = fom(lambda)
         for k = 1 : N
             fvals(k) = f{k}(lambda(k));
@@ -39,12 +63,9 @@ function [] = optimize_2D_modes(modes, p, dims, term_cond, max_iters, simulate, 
         fval = sum(fvals);
     end
 
-    
-    % Helper functions.
-    vec = @(z) [z{1}(:); z{2}(:); z{3}(:)];
-    unvec = @(z) {reshape(z(1:n), dims), reshape(z(n+1:2*n), dims), reshape(z(2*n+1:3*n), dims)};
 
-    % function [lambda, v, w] = my_eig(p)
+%% Form the multiple eigenmode solving function.
+
     for k = 1 : N
         m = modes(k);
         ind_eigs{k} = @(p, v_guess) my_eigensolver(simulate, m.eig_vis, ...

@@ -1,18 +1,17 @@
-%% solve_2D_mode_example
-% Shows how an eigenmode of a 2D structure can quickly be found in Matlab.
+%% solve_mode_ex
+% Shows how an eigenmode of a 3D structure can be obtained using Maxwell.
 
 %% Description
-% Very similar to |solve_2D_example|, except that we now solve for 
-% the eigenmode of a ring resonator.
+% Finds the eigenmode of a 3D ring resonator.
 
 % Make this a function instead of a script to allow for nested function definitions.
-function [] = solve_2D_mode_example()
+function [E] = solve_mode_ex(cluster_name, num_nodes)
 
 %% Create the simulation
 % We use the |add_planar| and |stretched_coordinates| functions to create our 
 % structure as well as our simulation grid.
 
-    dims = [80 80 1]; % Size of the simulation.
+    dims = [80 80 40]; % Size of the simulation.
     omega = 0.18; % Frequency of the simulation.
 
     % Create a ring epsilon structure.
@@ -29,28 +28,31 @@ function [] = solve_2D_mode_example()
                         'radius', [14], ...
                         'permittivity', 1)};
     epsilon = {ones(dims), ones(dims), ones(dims)};
-    epsilon = add_planar(epsilon, 1e9, 1, my_shapes);
+    epsilon = add_planar(epsilon, 6, dims(3)/2, my_shapes);
 
     % Plot the structure.
     xyz = 'xyz';
     for k = 1 : 3
-        subplot(1, 3, k);
-        imagesc(epsilon{k}'); axis equal tight;
+        subplot(2, 3, k+3);
+        imagesc(epsilon{k}(:,:,dims(3)/2)'); axis equal tight;
+        % imagesc(squeeze(epsilon{k}(:,dims(2)/2,:))'); axis equal tight; % Cross-section.
         title(xyz(k));
         colormap gray
     end
     snapnow;
 
     % Create the s-parameters.
-    [s_prim, s_dual] = stretched_coordinates(omega, dims, [10 10 0]);
+    [s_prim, s_dual] = stretched_coordinates(omega, dims, [10 10 10]);
 
     % Create the current source this is only used to get v_guess for the mode solver.
     J = {zeros(dims), zeros(dims), zeros(dims)};
-    J{1}(22, 40, 1) = 1; % Point source inside ring.
+    J{1}(22, 40, dims(3)/2) = 1; % Point source inside ring.
 
     % Permeability.
     mu = {ones(dims), ones(dims), ones(dims)};
 
+    % Initial guess of zero for all solves.
+    E0 = {zeros(dims), zeros(dims), zeros(dims)};
 
 %% Form matrices and function handles 
 % We now form the necessary linear algebra components and function hanles
@@ -64,14 +66,25 @@ function [] = solve_2D_mode_example()
     % Get ingredient matrices and vectors.
     [A1, A2, m, e, b] = maxwell_matrices(omega, s_prim, s_dual, mu, epsilon, J); 
 
-    % Form full matrix.
+    % Helper functions.
     n = prod(dims);
+    vec = @(z) [z{1}(:); z{2}(:); z{3}(:)]; 
     my_diag = @(z) spdiags(z(:), 0, numel(z), numel(z));
-    A = my_diag(e.^-0.5) * A1 * my_diag(m.^-1) * A2 * my_diag(e.^-0.5);
+    unvec = @(z) {reshape(z(1:n), dims), reshape(z(n+1:2*n), dims), reshape(z(2*n+1:3*n), dims)};
 
     % Compose function handles.
-    mult_A = @(x) A * x;
-    solve_A_shifted = @(lambda, b) (A - lambda * speye(3*n)) \ b;
+    mult_A = @(x) e.^-0.5 .* (A1 * (m.^-1 .* (A2 * (e.^-0.5 .* x))));
+    mult_A_dag = @(x) (e.^-0.5 .* (A2.' * (m.^-1 .* (A1.' * (e.^-0.5 .* conj(x)))))).';
+
+    function [x] = solve_A_shifted(lambda, b)
+    % Solves for the F-field.
+        omega = sqrt(lambda);
+        J = unvec(-i * omega * b);
+        subplot (2, 2, 1);
+        E = maxwell.solve(cluster_name, num_nodes, omega, s_prim, s_dual, mu, epsilon, E0, J, 1e4, 1e-6);
+        x = sqrt(e) .* vec(E);
+    end
+    % solve_A_shifted = @(lambda, b) (A - lambda * speye(3*n)) \ b;
 
     % In-line function for visualization of progress.
     function my_vis(lambda, v)
@@ -79,10 +92,11 @@ function [] = solve_2D_mode_example()
         x = v ./ sqrt(e);
         for k = 1 : 3
             E{k} = reshape(x((k-1)*n+1 : k*n), dims);
-            subplot(1, 3, k)
-            imagesc(abs(E{k})'); axis equal tight; % abs looks better than real :).
+            subplot(2, 3, k+3)
+            imagesc(abs(E{k}(:,:,dims(3)/2))'); axis equal tight; % abs looks better than real :).
             title(xyz(k));
         end
+        subplot(2, 2, 2);
     end
 
     % Solve to get v_guess.
@@ -97,7 +111,7 @@ function [] = solve_2D_mode_example()
 %% Run the eigenmode solver function
 
     % Find the eigenmode
-    [lambda, v] = eigenmode_solver(mult_A, solve_A_shifted, @my_vis, v_guess, 10, 1e-6);
+    [lambda, v] = eigenmode_solver(mult_A, @solve_A_shifted, @my_vis, v_guess, 10, 1e-6);
     snapnow;
 
 %%
@@ -122,5 +136,11 @@ function [] = solve_2D_mode_example()
     % Obtain right eigenvector.
     w = conj(S * v);
 
-    fprintf('Error of right eigenvector: %e\n', norm(w' * A - lambda * w')/norm(w));
+    % Display error.
+    fprintf('Error of left eigenvector: %e\n', norm(mult_A(v) - lambda * v) / norm(v));
+    fprintf('Error of right eigenvector: %e\n', norm(mult_A_dag(w) - lambda * w') / norm(w));
+    % fprintf('Error of right eigenvector: %e\n', norm(w' * A - lambda * w')/norm(w));
+
+    % Return the E-field.
+    E = vec(v ./ sqrt(e));
 end

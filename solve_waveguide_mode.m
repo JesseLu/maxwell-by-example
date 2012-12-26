@@ -20,6 +20,7 @@ function [J, beta, E, H] = solve_waveguide_mode(...
 
     p0 = pos{1};
     p1 = pos{2};
+    shape = p1 - p0 + 1;
 
     % Cut out relevant parameters.
     for k = 1 : 3
@@ -28,42 +29,37 @@ function [J, beta, E, H] = solve_waveguide_mode(...
         epsilon{k} = epsilon{k}(p0(1):p1(1), p0(2):p1(2), p0(3):p1(3));
     end
 
-    prop_dir
-    shape = size(eps{1}); % The shape of eps 
 
-    % Indices of the non-propagating directions.
-    xdir = mod(prop_dir + 1 - 1, 3) + 1; 
-    ydir = mod(prop_dir + 2 - 1, 3) + 1; 
-    %% Build operators
+    if all(dir(1) ~= 'xyz')
+        error('The propagation direction must be either x, y, or z.');  
+    end
 
+    prop_dir = find(dir(1) == 'xyz');
+    
     % Full complex operator.
-    A = wg_operator(omega, s_prim, s_dual, epsilon);
+    A = wg_operator(omega, s_prim, s_dual, epsilon, prop_dir, shape);
 
     % Real-only operator.
-    for k = 1 : 2
+    for k = 1 : 3
         s_prim_r{k} = real(s_prim{k});
         s_dual_r{k} = real(s_dual{k});
-    end
-
-    for k = 1 : 3
         epsilon_r{k} = real(epsilon{k});
     end
-    A_r = wg_operator(real(omega), s_prim_r, s_dual_r, epsilon_r);
+    A_r = wg_operator(real(omega), s_prim_r, s_dual_r, epsilon_r, ...
+                        prop_dir, shape);
 
-
-    %% Estimate the largest eigenvalue
-    % Use only the real part of the operator.
+    % Solve for largest-magnitude eigenmode.
+    % This will almost always be positive.
+    % We do this in order to be able to solve for the most negative eigenmodes,
+    % from which we can select the appropriate propagating mode.
     [V, ev_max] = eigs(A_r, 1); % Find the largest-magnitude eigenvector.
+    if ev_max < 0 
+        error('Largest eigenvalue is negative.'); % Ooops.
+    end
 
-    % This shift will make the most negative eigenvectors the largest amplitude 
-    % eigenvectors.
-    shift = abs(ev_max); 
-
-    %% Solve for the desired mode
-    % Use only the real part of the operator.
-    [V, D] = eigs(A_r - shift * speye(size(A_r,1)), mode_num); 
-
-    %% Solve for the mode with the full operator
+    % Shift the matrix and find the appropriate eigenmode.
+    n = size(A_r, 1);
+    [V, D] = eigs(A_r - ev_max * speye(n), 2*mode_num + 5); 
 
     gamma = diag(D);
     [temp, ind] = sort(gamma);
@@ -71,28 +67,30 @@ function [J, beta, E, H] = solve_waveguide_mode(...
     beta = 1/i * sqrt(beta + ev_max);
     V = V(:,ind(mode_num));
 
+    % Calculate error.
+    norm((A_r - beta^2 * speye(n))*V)
+
     % Back out hx and hy.
-    shape = size(squeeze(epsilon{1}));
-    size(V)
-    shape
     N = prod(shape);
     hx = V(1:N,:);
     hy = V(N+1:end,:);
 
     % Plot hx and hy.
+%     figure(1);
     for k = 1 : size(V,2)
-        subplot 121; my_plot(reshape(abs(hx(:,k)), shape));
-        subplot 122; my_plot(reshape(abs(hy(:,k)), shape));
+        subplot 121; my_plot(reshape(real(hx(:,k)), shape));
+        subplot 122; my_plot(reshape(real(hy(:,k)), shape));
     end
-    beta
+
+%     figure(2);
+%     for k = 1 : 3
+%         subplot(1, 3, k);
+%         my_plot(epsilon{k});
+%     end
 
     % Get the current sources (notice the switch).
     jx = reshape(hy, shape);
     jy = reshape(hx, shape);
-
-
-    %% Back out the current excitation
-
 
 
 end % End of solve_waveguide_mode function.
@@ -106,35 +104,34 @@ function my_plot(x)
 
 
 %% Source code for private functions
-function [A] = wg_operator(omega, s_prim, s_dual, epsilon)
+function [A] = wg_operator(omega, s_prim, s_dual, epsilon, prop_dir, shape)
 % Taken from Section 2 of Veronis, Fan, J. of Lightwave Tech., vol. 25, no. 9, 
 % Sept 2007.
 
-    shape = size(epsilon{1});
-    if length(shape) ~= 3
-        error('Could not form a three-dimensional, flat shape parameter.');
-    end
+    % Indices of the non-propagating directions.
+    xdir = mod(prop_dir + 1 - 1, 3) + 1; 
+    ydir = mod(prop_dir + 2 - 1, 3) + 1; 
 
+    % Create matrices.
+    xyz = 'xyz';
+    Dx = deriv(xyz(xdir), shape);
+    Dy = deriv(xyz(ydir), shape);
 
-    % Derivative matrices.
-    Dx = deriv('x', shape);
-    Dy = deriv('y', shape);
+    % SC parameters.
+    % Only real part is taken, this may be modified in the future.
+    [s_prim_x, s_prim_y] = ndgrid(s_prim{xdir}, s_prim{ydir});
+    [s_dual_x, s_dual_y] = ndgrid(s_dual{xdir}, s_dual{ydir});
 
-    % Expand stretched-coordinate parameters.
-    [s_prim_x, s_prim_y] = ndgrid(s_prim{1}, s_prim{2});
-    [s_dual_x, s_dual_y] = ndgrid(s_dual{1}, s_dual{2});
-
-    my_diag = @(z) spdiags(z(:), 0, numel(z), numel(z)); % Helper function.
-
-    % Build the component matrices.
+    % Build matrices.
+    my_diag = @(z) spdiags(z(:), 0, numel(z), numel(z));
     Dfx = my_diag(s_dual_x) * Dx;
     Dbx = my_diag(s_prim_x) * (-Dx');
     Dfy = my_diag(s_dual_y) * Dy;
     Dby = my_diag(s_prim_y) * (-Dy');
-    eps_xy = my_diag([epsilon{1}(:); epsilon{2}(:)]);
-    inv_eps_z = my_diag(epsilon{3}.^-1);
+    eps_xy = my_diag([epsilon{xdir}(:); epsilon{ydir}(:)]);
+    inv_eps_z = my_diag(epsilon{prop_dir}.^-1);
 
-    % Assemble into final operator
+    % Build operator.
     A = -omega^2 * eps_xy + eps_xy * [Dfy; -Dfx] * inv_eps_z * [-Dby, Dbx] - ...
         [Dbx; Dby] * [Dfx, Dfy];
 

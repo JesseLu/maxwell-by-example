@@ -40,7 +40,8 @@ function [J, beta, E, H] = solve_waveguide_mode(...
     % Build both real-only and full-complex versions of the operator.
 
     % Full complex operator.
-    A = wg_operator(omega, sp, sd, eps, prop_dir, shape);
+    [A, v2hz, h2e, h_err, e_err] = ...
+                        wg_operator(omega, sp, sd, eps, prop_dir, shape);
     n = size(A, 1);
 
     % Real-only operator.
@@ -105,14 +106,26 @@ function [J, beta, E, H] = solve_waveguide_mode(...
     N = prod(shape);
     hx = v(1:N,:);
     hy = v(N+1:end,:);
+    hz = v2hz(beta, v);
+    h = [hx; hy; hz];
+    
 
     % E-field.
+    e = h2e(beta, h);
+    ex = e(1:N,:);
+    ey = e(N+1:2*N,:);
+    ez = e(2*N+1:3*N,:);
 
+    h_err(beta, h)
+    e_err(beta, e)
     % J-field (current source excitation).
 
-    % Plot hx and hy.
-    subplot 121; my_plot(reshape(abs(hx), shape));
-    subplot 122; my_plot(reshape(abs(hy), shape));
+    % Plot fields.
+    f = {ex, ey, ez, hx, hy, hz};
+    for k = 1 : 6
+        subplot(2, 3, k);
+        my_plot(reshape(real(f{k}), shape));
+    end
 
     % Get the current sources (notice the switch).
     jx = reshape(hy, shape);
@@ -130,7 +143,8 @@ function my_plot(x)
 
 
 %% Source code for private functions
-function [A, HtoE] = wg_operator(omega, s_prim, s_dual, epsilon, prop_dir, shape)
+function [A, v2hz, h2e, h_err, e_err] = wg_operator(...
+                                omega, s_prim, s_dual, epsilon, prop_dir, shape)
 % Taken from Section 2 of Veronis, Fan, J. of Lightwave Tech., vol. 25, no. 9, 
 % Sept 2007.
 
@@ -154,13 +168,33 @@ function [A, HtoE] = wg_operator(omega, s_prim, s_dual, epsilon, prop_dir, shape
     Dbx = my_diag(s_prim_x) * (-Dx');
     Dfy = my_diag(s_dual_y) * Dy;
     Dby = my_diag(s_prim_y) * (-Dy');
-    eps_xy = my_diag([epsilon{xdir}(:); epsilon{ydir}(:)]);
+    eps_yx = my_diag([epsilon{ydir}(:); epsilon{xdir}(:)]);
     inv_eps_z = my_diag(epsilon{prop_dir}.^-1);
 
     % Build operator.
-    A = -omega^2 * eps_xy + eps_xy * [Dfy; -Dfx] * inv_eps_z * [-Dby, Dbx] - ...
+    A = -omega^2 * eps_yx + eps_yx * [Dfy; -Dfx] * inv_eps_z * [-Dby, Dbx] - ...
         [Dbx; Dby] * [Dfx, Dfy];
 
+    % Secondary operators.
+    v2hz = @(beta, v) ([Dfx, Dfy] * v) ./ (-i * beta);
+
+    my_zero = sparse(prod(shape), prod(shape));
+    my_eye = speye(prod(shape));
+    h_curl = @(beta)   [my_zero,        -i*beta*my_eye,  Dby; ...
+                        i*beta*my_eye,  my_zero,       -Dbx; ...
+                        -Dby,           Dbx,            my_zero];
+    e_curl = @(beta)   [my_zero,        -i*beta*my_eye, Dfy; ...
+                        i*beta*my_eye,  my_zero,        -Dfx; ...
+                        -Dfy,           Dfx,            my_zero];
+
+    eps = [epsilon{xdir}(:); epsilon{ydir}(:); epsilon{prop_dir}(:)];
+    h2e = @(beta, h) (h_curl(beta) * h) ./ (i*omega*eps);
+
+    h_err = @(beta, h) norm(e_curl(beta) * ((h_curl(beta) * h) ./ eps) - ...
+                        omega^2 * h) / norm(h);
+
+    e_err = @(beta, e) norm(h_curl(beta) * (e_curl(beta) * e) - ...
+                        omega^2 * (eps .* e)) / norm(e);
 end % End of wg_operator private function.
 
 

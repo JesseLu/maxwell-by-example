@@ -101,17 +101,52 @@ function [beta, E, H, J] = solve_waveguide_mode(...
     beta = i * sqrt(lambda);
 
     % Fields.
-    [E, H, J, E_err, H_err] = get_wg_fields(beta, v);
+    [E, H, J_small, E_err, H_err] = get_wg_fields(beta, v);
 
-    % Plot fields.
-    f = {E{:}, H{:}};
-    for k = 1 : 6
-        subplot(2, 3, k);
-        my_plot(reshape(real(f{k}), shape));
+    % Expand the J-field to span the entire simulation space.
+    orig_dims = size(epsilon{1});
+    for k = 1 : 3
+        J{k} = zeros(orig_dims);
+        J{k}(p0(1):p1(1), p0(2):p1(2), p0(3):p1(3)) = J_small{k};
     end
-    
-    % Print out the errors.
-    fprintf('Error: %e (H-field), %e (E-field).\n', H_err, E_err);
+
+    % If needed, make the source uni-directional.
+    % This is done by creating an adjacent source which cancels the propagation
+    % of the mode in one direction.
+    if length(dir) == 2
+        dl = real(sp{prop_dir}); % Distance separating J and J_adj planes.
+
+        if dir(2) == '+'
+            coeff = 1;
+        elseif dir(2) == '-'
+            coeff = -1;
+        else
+            error('Directionality must be either + or -.');
+        end
+
+        % Shift indices for the propagation direction.
+        ps0 = p0;
+        ps1 = p1;
+        ps0(prop_dir) = p0(prop_dir) + 1;
+        ps1(prop_dir) = p1(prop_dir) + 1;
+
+        % Form the adjacent J-field. 
+        for k = 1 : 3  
+            J{k}(ps0(1):ps1(1), ps0(2):ps1(2), ps0(3):ps1(3)) = ...
+                -1 * J{k}(p0(1):p1(1), p0(2):p1(2), p0(3):p1(3)) * ...
+                exp(coeff * i * beta * dl);
+        end
+    end
+
+%     % Plot fields.
+%     f = {E{:}, H{:}};
+%     for k = 1 : 6
+%         subplot(2, 3, k);
+%         my_plot(reshape(real(f{k}), shape));
+%     end
+%     
+%     % Print out the errors.
+%     fprintf('Error: %e (H-field), %e (E-field).\n', H_err, E_err);
 
 
 end % End of solve_waveguide_mode function.

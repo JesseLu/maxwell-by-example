@@ -24,69 +24,95 @@ function [J, beta, E, H] = solve_waveguide_mode(...
 
     % Cut out relevant parameters.
     for k = 1 : 3
-        s_prim{k} = s_prim{k}(p0(k):p1(k));
-        s_dual{k} = s_dual{k}(p0(k):p1(k));
-        epsilon{k} = epsilon{k}(p0(1):p1(1), p0(2):p1(2), p0(3):p1(3));
+        sp{k} = s_prim{k}(p0(k):p1(k));
+        sd{k} = s_dual{k}(p0(k):p1(k));
+        eps{k} = epsilon{k}(p0(1):p1(1), p0(2):p1(2), p0(3):p1(3));
     end
 
-
+    % Figure out what direction we are to propagate in.
     if all(dir(1) ~= 'xyz')
         error('The propagation direction must be either x, y, or z.');  
     end
-
     prop_dir = find(dir(1) == 'xyz');
+
     
+    %% Build the operator
+    % Build both real-only and full-complex versions of the operator.
+
     % Full complex operator.
-    A = wg_operator(omega, s_prim, s_dual, epsilon, prop_dir, shape);
+    A = wg_operator(omega, sp, sd, eps, prop_dir, shape);
+    n = size(A, 1);
 
     % Real-only operator.
     for k = 1 : 3
-        s_prim_r{k} = real(s_prim{k});
-        s_dual_r{k} = real(s_dual{k});
-        epsilon_r{k} = real(epsilon{k});
+        sp_r{k} = real(sp{k});
+        sd_r{k} = real(sd{k});
+        eps_r{k} = real(eps{k});
     end
-    A_r = wg_operator(real(omega), s_prim_r, s_dual_r, epsilon_r, ...
-                        prop_dir, shape);
+    A_r = wg_operator(real(omega), sp_r, sd_r, eps_r, prop_dir, shape);
 
-    % Solve for largest-magnitude eigenmode.
-    % This will almost always be positive.
-    % We do this in order to be able to solve for the most negative eigenmodes,
-    % from which we can select the appropriate propagating mode.
-    [V, ev_max] = eigs(A_r, 1); % Find the largest-magnitude eigenvector.
-    if ev_max < 0 
-        error('Largest eigenvalue is negative.'); % Ooops.
+
+    %% Solve for largest-magnitude eigenvalue of the real operator 
+    % This is done in order to obtain the appropriate shift, 
+    % from which we can calculate the most negative eigenvalues.
+
+    % Use the power iteration algorithm.
+    v = randn(n, 1);
+    for k = 1 : 20 
+        v = A_r * v;
     end
+    ev_max = (v' * A_r * v) / norm(v)^2; % Rayleigh quotient.
+    shift = abs(ev_max); 
+
+
+    %% Solve for the desired eigenvector of the real operator
+    % Taking the real operator, we a few of the most negative eigenmodes,
+    % and then choose the one we are interested in.
 
     % Shift the matrix and find the appropriate eigenmode.
-    n = size(A_r, 1);
-    [V, D] = eigs(A_r - ev_max * speye(n), 2*mode_num + 5); 
-
+    % Find a few extra modes just to be sure we found the correct one.
+    [V, D] = eigs(A_r - shift * speye(n), mode_num + 5); 
+    
     gamma = diag(D);
-    [temp, ind] = sort(gamma);
-    beta = gamma(ind(mode_num));
-    beta = 1/i * sqrt(beta + ev_max);
-    V = V(:,ind(mode_num));
+    [temp, ind] = sort(gamma); % Sort most negative first.
+    v = V(:,ind(mode_num)); % Choose the appropriate eigenmode.
 
-    % Calculate error.
-    norm((A_r - beta^2 * speye(n))*V)
 
-    % Back out hx and hy.
-    N = prod(shape);
-    hx = V(1:N,:);
-    hy = V(N+1:end,:);
+    %% Solve for the eigenvector of the full operator
+    % We use the selected eigenvector from the real operator as an initial
+    % guess.
 
-    % Plot hx and hy.
-%     figure(1);
-    for k = 1 : size(V,2)
-        subplot 121; my_plot(reshape(real(hx(:,k)), shape));
-        subplot 122; my_plot(reshape(real(hy(:,k)), shape));
+    % Perform Rayleigh quotient iteration to get the mode of the full operator.
+    lambda = v' * A * v;
+    for k = 1 : 40 
+        err(k) = norm(A*v - lambda*v);
+        if (err(k) < 1e-13)
+            break
+        end
+        w = (A - lambda*speye(n)) \ v; 
+        v = w / norm(w);
+        lambda = v' * A * v;
     end
 
-%     figure(2);
-%     for k = 1 : 3
-%         subplot(1, 3, k);
-%         my_plot(epsilon{k});
-%     end
+
+    %% Calculate output parameters
+
+    % Wave-vector.
+    beta = i * sqrt(lambda);
+    % norm((A - (i*beta)^2 * speye(n))*v) % Can be used to calculate error.
+
+    % H-field.
+    N = prod(shape);
+    hx = v(1:N,:);
+    hy = v(N+1:end,:);
+
+    % E-field.
+
+    % J-field (current source excitation).
+
+    % Plot hx and hy.
+    subplot 121; my_plot(reshape(abs(hx), shape));
+    subplot 122; my_plot(reshape(abs(hy), shape));
 
     % Get the current sources (notice the switch).
     jx = reshape(hy, shape);
@@ -104,7 +130,7 @@ function my_plot(x)
 
 
 %% Source code for private functions
-function [A] = wg_operator(omega, s_prim, s_dual, epsilon, prop_dir, shape)
+function [A, HtoE] = wg_operator(omega, s_prim, s_dual, epsilon, prop_dir, shape)
 % Taken from Section 2 of Veronis, Fan, J. of Lightwave Tech., vol. 25, no. 9, 
 % Sept 2007.
 

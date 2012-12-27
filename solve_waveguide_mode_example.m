@@ -34,6 +34,7 @@
         j = mod(k+1, 3) + 1;
         eps_wg{k} = epsilon{j}(1,:,:);
     end
-    solve_waveguide_mode(omega, s_prim, s_dual, epsilon, {[20 1 1], [20 dims(2) dims(3)]}, 'x', 2)
+    [beta, J, E, H] = solve_waveguide_mode(omega, s_prim, s_dual, epsilon, ...
+                                    {[20 1 1], [20 dims(2) dims(3)]}, 'x', 1);
     % solve_waveguide_mode(omega, s_prim(2:3), s_dual(2:3), eps_wg, 2);
 

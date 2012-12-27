@@ -5,7 +5,7 @@
 % Given a 2D (or even 1D) description of the waveguiding device, 
 % a corresponding waveguide mode of a given order and frequency is found.
 
-function [J, beta, E, H] = solve_waveguide_mode(...
+function [beta, E, H, J] = solve_waveguide_mode(...
                                         omega, s_prim, s_dual, epsilon, ...
                                         pos, dir, mode_num)
 
@@ -40,8 +40,7 @@ function [J, beta, E, H] = solve_waveguide_mode(...
     % Build both real-only and full-complex versions of the operator.
 
     % Full complex operator.
-    [A, v2hz, h2e, h_err, e_err] = ...
-                        wg_operator(omega, sp, sd, eps, prop_dir, shape);
+    [A, get_wg_fields] = wg_operator(omega, sp, sd, eps, prop_dir, shape);
     n = size(A, 1);
 
     % Real-only operator.
@@ -100,36 +99,19 @@ function [J, beta, E, H] = solve_waveguide_mode(...
 
     % Wave-vector.
     beta = i * sqrt(lambda);
-    % norm((A - (i*beta)^2 * speye(n))*v) % Can be used to calculate error.
 
-    % H-field.
-    N = prod(shape);
-    hx = v(1:N,:);
-    hy = v(N+1:end,:);
-    hz = v2hz(beta, v);
-    h = [hx; hy; hz];
-    
-
-    % E-field.
-    e = h2e(beta, h);
-    ex = e(1:N,:);
-    ey = e(N+1:2*N,:);
-    ez = e(2*N+1:3*N,:);
-
-    h_err(beta, h)
-    e_err(beta, e)
-    % J-field (current source excitation).
+    % Fields.
+    [E, H, J, E_err, H_err] = get_wg_fields(beta, v);
 
     % Plot fields.
-    f = {ex, ey, ez, hx, hy, hz};
+    f = {E{:}, H{:}};
     for k = 1 : 6
         subplot(2, 3, k);
         my_plot(reshape(real(f{k}), shape));
     end
-
-    % Get the current sources (notice the switch).
-    jx = reshape(hy, shape);
-    jy = reshape(hx, shape);
+    
+    % Print out the errors.
+    fprintf('Error: %e (H-field), %e (E-field).\n', H_err, E_err);
 
 
 end % End of solve_waveguide_mode function.
@@ -143,10 +125,8 @@ function my_plot(x)
 
 
 %% Source code for private functions
-function [A, v2hz, h2e, h_err, e_err] = wg_operator(...
-                                omega, s_prim, s_dual, epsilon, prop_dir, shape)
-% Taken from Section 2 of Veronis, Fan, J. of Lightwave Tech., vol. 25, no. 9, 
-% Sept 2007.
+function [A, get_wg_fields] = wg_operator(omega, s_prim, s_dual, epsilon, ...
+                                            prop_dir, shape)
 
     % Indices of the non-propagating directions.
     xdir = mod(prop_dir + 1 - 1, 3) + 1; 
@@ -157,8 +137,7 @@ function [A, v2hz, h2e, h_err, e_err] = wg_operator(...
     Dx = deriv(xyz(xdir), shape);
     Dy = deriv(xyz(ydir), shape);
 
-    % SC parameters.
-    % Only real part is taken, this may be modified in the future.
+    % Stretched-coordinate parameters.
     [s_prim_x, s_prim_y] = ndgrid(s_prim{xdir}, s_prim{ydir});
     [s_dual_x, s_dual_y] = ndgrid(s_dual{xdir}, s_dual{ydir});
 
@@ -172,12 +151,15 @@ function [A, v2hz, h2e, h_err, e_err] = wg_operator(...
     inv_eps_z = my_diag(epsilon{prop_dir}.^-1);
 
     % Build operator.
+    % Taken from Section 2 of Veronis, Fan, J. of Lightwave Tech., 
+    % vol. 25, no. 9, Sept 2007.
     A = -omega^2 * eps_yx + eps_yx * [Dfy; -Dfx] * inv_eps_z * [-Dby, Dbx] - ...
         [Dbx; Dby] * [Dfx, Dfy];
 
-    % Secondary operators.
-    v2hz = @(beta, v) ([Dfx, Dfy] * v) ./ (-i * beta);
+    % Build secondary operator to compute full h-field.
+    v2h = @(beta, v)  [v; (([Dfx, Dfy] * v) ./ (-i * beta))];
 
+    % Build secondary operator to compute the error in the wave equation.
     my_zero = sparse(prod(shape), prod(shape));
     my_eye = speye(prod(shape));
     h_curl = @(beta)   [my_zero,        -i*beta*my_eye,  Dby; ...
@@ -186,15 +168,39 @@ function [A, v2hz, h2e, h_err, e_err] = wg_operator(...
     e_curl = @(beta)   [my_zero,        -i*beta*my_eye, Dfy; ...
                         i*beta*my_eye,  my_zero,        -Dfx; ...
                         -Dfy,           Dfx,            my_zero];
-
     eps = [epsilon{xdir}(:); epsilon{ydir}(:); epsilon{prop_dir}(:)];
-    h2e = @(beta, h) (h_curl(beta) * h) ./ (i*omega*eps);
 
     h_err = @(beta, h) norm(e_curl(beta) * ((h_curl(beta) * h) ./ eps) - ...
                         omega^2 * h) / norm(h);
-
     e_err = @(beta, e) norm(h_curl(beta) * (e_curl(beta) * e) - ...
                         omega^2 * (eps .* e)) / norm(e);
+
+    % Secondary operator to compute e-field.
+    v2e = @(beta, v) (h_curl(beta) * v2h(beta, v)) ./ (i*omega*eps);
+
+    % Secondary operator to compute j-field (excitation).
+    n = prod(shape);
+    v2j = @(v) [v(n+1:2*n); v(1:n); zeros(n, 1)];
+
+    % Secondary operator to switch from a vector to the ordered field 
+    % representation.
+    rs = @(z) reshape(z, shape);
+    to_field = @(z) {rs(z(1:n)), rs(z(n+1:2*n)), rs(z(2*n+1:3*n))};
+    [~, rev_order] = sort([xdir, ydir, prop_dir]);
+    reorder = @(f) {f{rev_order(1)}, f{rev_order(2)}, f{rev_order(3)}};
+    vec2field = @(z) reorder(to_field(z));
+
+    % Secondary operator that returns ordered fields.
+    function [E, H, J, E_err, H_err] = wg_fields(beta, v)
+        E = vec2field(v2e(beta, v));
+        H = vec2field(v2h(beta, v));
+        J = vec2field(v2j(v));
+        E_err = e_err(beta, v2e(beta, v));
+        H_err = h_err(beta, v2h(beta, v));
+    end
+
+    get_wg_fields = @wg_fields; % Function handle to get all the important info.
+
 end % End of wg_operator private function.
 
 

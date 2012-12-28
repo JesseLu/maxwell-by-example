@@ -2,7 +2,7 @@
 
     omega = 0.12;
     dims = [80 80 1];
-    epsilon_wg = 13-1i;
+    epsilon_wg = 3-1i;
     dir = 'y+';
     mode_num = 4;
     wg_dims = [1e9 16];
@@ -30,7 +30,15 @@
 
     [s_prim, s_dual] = stretched_coordinates(omega, dims, [10 10 1]);
 
-    [beta, E, H, J] = solve_waveguide_mode(omega, s_prim, s_dual, epsilon, ...
+    % temp = mu;
+    for k = 1 : 3
+        mu{k} = real(epsilon{k});
+    end
+    % epsilon = temp;
+
+    figure(1);
+    [beta, E, H, J] = solve_waveguide_mode( ...
+                omega, s_prim, s_dual, mu, epsilon, ...
                 {[1 dims(2)/2 1], [dims(1) dims(2)/2 dims(3)]}, dir, mode_num);
 
     % Get ingredient matrices and vectors.
@@ -45,6 +53,7 @@
     x = A \ b;
 
     % Reshape solution and plot it.
+    figure(2);
     for k = 1 : 3
         E{k} = reshape(x((k-1)*n+1 : k*n), dims);
 

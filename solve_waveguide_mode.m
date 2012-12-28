@@ -2,31 +2,59 @@
 % Find the mode of a waveguide, as well as the current excitation for it.
 
 %% Description
-% Given a 2D (or even 1D) description of the waveguiding device, 
-% a corresponding waveguide mode of a given order and frequency is found.
+% Computes the propagation mode for a nanophotonic waveguide structure
+% including the wave-vector, E- and H-fields, as well as the current excitation
+% needed for omni- or uni-directional excitation.
 
 function [beta, E, H, J] = solve_waveguide_mode(...
-                                        omega, s_prim, s_dual, epsilon, ...
+                                        omega, s_prim, s_dual, mu, epsilon, ...
                                         pos, dir, mode_num)
 
 %% Input parameters
 % The input parameters are very similar to those which describe a simulation,
 % with the exception that most of the parameters are in two-dimensions (x and y)
 % only.
+%
+% Additionally, parameters describing the location, direction, and order of
+% the waveguide mode are included.
+%
+% * |omega|, |s_prim|, |s_dual|, |mu|, and |epsilon| should be identical
+%   to the values used to desribe any simulation.
+% * |pos| is a cell array of 2 three-element vectors describing the bounded
+%   plane on which to excite the waveguide mode. 
+%   Specifically, |pos| should look like |{[x0 y0 z0], [x1 y1 z1]}|.
+%   Note that if propagation in the x-direction is desired, then |x0| should
+%   equal |x1|.
+% * |dir| is a string denoting the diretion of propagation for the waveguide.
+%   Possible values include |'x'|, |'y'|, and |'z'| which denote propagation
+%   in both the positive and negative directions as well as unidirectional 
+%   excitation directions |'x+'|, |'x-'|, |'y+'|, |'y-'|, |'z+'|, and |'z-'|.
+% * |mode_num| is the order of the mode to compute where |1| denotes the
+%   fundamental mode, |2| denotes the second order mode and so on.
 
 %% Output parameters
+% * |beta| is the wavevector of the mode.
+% * |E| and |H| are the E- and H-fields of the mode. 
+%   Note that the size of each component array is matched to the bounded
+%   plane specified by the |pos| input parameter.
+% * |J| is the current excitation needed for the mode.
+%   Unlike |E| and |H|, |J| spans the entire simulation space and includes
+%   a plan in-front of the bounded plane in order to enable a unidirectional
+%   source.
 
     %% Parse inputs
 
+    % Shorthand for the bounded plane.
     p0 = pos{1};
     p1 = pos{2};
     shape = p1 - p0 + 1;
 
-    % Cut out relevant parameters.
+    % Cut out the bounded plane.
     for k = 1 : 3
         sp{k} = s_prim{k}(p0(k):p1(k));
         sd{k} = s_dual{k}(p0(k):p1(k));
         eps{k} = epsilon{k}(p0(1):p1(1), p0(2):p1(2), p0(3):p1(3));
+        m{k} = mu{k}(p0(1):p1(1), p0(2):p1(2), p0(3):p1(3));
     end
 
     % Figure out what direction we are to propagate in.
@@ -40,16 +68,16 @@ function [beta, E, H, J] = solve_waveguide_mode(...
     % Build both real-only and full-complex versions of the operator.
 
     % Full complex operator.
-    [A, get_wg_fields] = wg_operator(omega, sp, sd, eps, prop_dir, shape);
-    n = size(A, 1);
+    [A, get_wg_fields] = wg_operator(omega, sp, sd, eps, m, prop_dir, shape);
 
     % Real-only operator.
     for k = 1 : 3
         sp_r{k} = real(sp{k});
         sd_r{k} = real(sd{k});
         eps_r{k} = real(eps{k});
+        m_r{k} = real(m{k});
     end
-    A_r = wg_operator(real(omega), sp_r, sd_r, eps_r, prop_dir, shape);
+    A_r = wg_operator(real(omega), sp_r, sd_r, eps_r, m_r, prop_dir, shape);
 
 
     %% Solve for largest-magnitude eigenvalue of the real operator 
@@ -57,12 +85,13 @@ function [beta, E, H, J] = solve_waveguide_mode(...
     % from which we can calculate the most negative eigenvalues.
 
     % Use the power iteration algorithm.
+    n = size(A_r, 1);
     v = randn(n, 1);
-    for k = 1 : 20 
+    for k = 1 : 20 % 20 iterations should always be enough for an estimate.
         v = A_r * v;
     end
     ev_max = (v' * A_r * v) / norm(v)^2; % Rayleigh quotient.
-    shift = abs(ev_max); 
+    shift = abs(ev_max); % Shift works for both positive and negative ev_max.
 
 
     %% Solve for the desired eigenvector of the real operator
@@ -99,6 +128,7 @@ function [beta, E, H, J] = solve_waveguide_mode(...
 
     % Wave-vector.
     beta = i * sqrt(lambda);
+    beta = sign(real(beta)) * beta; % Force real part of beta to be positive.
 
     % Fields.
     [E, H, J_small, E_err, H_err] = get_wg_fields(beta, v);
@@ -138,30 +168,28 @@ function [beta, E, H, J] = solve_waveguide_mode(...
         end
     end
 
-%     % Plot fields.
-%     f = {E{:}, H{:}};
-%     for k = 1 : 6
-%         subplot(2, 3, k);
-%         my_plot(reshape(real(f{k}), shape));
-%     end
-%     
-%     % Print out the errors.
-%     fprintf('Error: %e (H-field), %e (E-field).\n', H_err, E_err);
-
-
-end % End of solve_waveguide_mode function.
-
-function my_plot(x)
-    imagesc(squeeze(x).', (max(abs(x(:))) + eps) * [-1 1]);
-    colorbar 
-    axis equal tight;
-    set(gca, 'YDir', 'normal');
+    % Plot fields.
+    f = {E{:}, H{:}};
+    title_text = {'Ex', 'Ey', 'Ez', 'Hx', 'Hy', 'Hz'};
+    for k = 1 : 6
+        subplot(2, 3, k);
+        my_plot(reshape(real(f{k}), shape));
+        title(title_text{k});
     end
+    
+    % Print out the errors.
+    fprintf('Error: %e (H-field), %e (E-field).\n', H_err, E_err);
 
 
-%% Source code for private functions
-function [A, get_wg_fields] = wg_operator(omega, s_prim, s_dual, epsilon, ...
+end % End of solve_waveguide_mode function
+
+%% Private wg_operator function.
+function [A, get_wg_fields] = wg_operator(omega, s_prim, s_dual, epsilon, mu, ...
                                             prop_dir, shape)
+% Builds the operator (represented by matrix A), which defines the eigenmode 
+% problem.
+% Also provides the function get_wg_fields to obtain relevant parameters from
+% the solution to the eigenmode problem.
 
     % Indices of the non-propagating directions.
     xdir = mod(prop_dir + 1 - 1, 3) + 1; 
@@ -184,15 +212,18 @@ function [A, get_wg_fields] = wg_operator(omega, s_prim, s_dual, epsilon, ...
     Dby = my_diag(s_prim_y) * (-Dy');
     eps_yx = my_diag([epsilon{ydir}(:); epsilon{xdir}(:)]);
     inv_eps_z = my_diag(epsilon{prop_dir}.^-1);
+    mu_xy = my_diag([mu{xdir}(:); mu{ydir}(:)]);
+    inv_mu_z = my_diag(mu{prop_dir}.^-1);
 
     % Build operator.
     % Taken from Section 2 of Veronis, Fan, J. of Lightwave Tech., 
     % vol. 25, no. 9, Sept 2007.
-    A = -omega^2 * eps_yx + eps_yx * [Dfy; -Dfx] * inv_eps_z * [-Dby, Dbx] - ...
-        [Dbx; Dby] * [Dfx, Dfy];
+    A = -omega^2 * eps_yx * mu_xy + ...
+        eps_yx * [Dfy; -Dfx] * inv_eps_z * [-Dby, Dbx] - ...
+        [Dbx; Dby] * inv_mu_z * [Dfx, Dfy] * mu_xy;
 
     % Build secondary operator to compute full h-field.
-    v2h = @(beta, v)  [v; (([Dfx, Dfy] * v) ./ (-i * beta))];
+    v2h = @(beta, v)  [v; ((inv_mu_z * [Dfx, Dfy] * mu_xy * v) ./ (-i * beta))];
 
     % Build secondary operator to compute the error in the wave equation.
     my_zero = sparse(prod(shape), prod(shape));
@@ -204,10 +235,11 @@ function [A, get_wg_fields] = wg_operator(omega, s_prim, s_dual, epsilon, ...
                         i*beta*my_eye,  my_zero,        -Dfx; ...
                         -Dfy,           Dfx,            my_zero];
     eps = [epsilon{xdir}(:); epsilon{ydir}(:); epsilon{prop_dir}(:)];
+    m = [mu{xdir}(:); mu{ydir}(:); mu{prop_dir}(:)];
 
     h_err = @(beta, h) norm(e_curl(beta) * ((h_curl(beta) * h) ./ eps) - ...
-                        omega^2 * h) / norm(h);
-    e_err = @(beta, e) norm(h_curl(beta) * (e_curl(beta) * e) - ...
+                        omega^2 * (m .* h)) / norm(h);
+    e_err = @(beta, e) norm(h_curl(beta) * ((e_curl(beta) * e) ./ m) - ...
                         omega^2 * (eps .* e)) / norm(e);
 
     % Secondary operator to compute e-field.
@@ -239,6 +271,7 @@ function [A, get_wg_fields] = wg_operator(omega, s_prim, s_dual, epsilon, ...
 end % End of wg_operator private function.
 
 
+%% Other private functions.
 function [D] = deriv(dir, shape)
 % Private function for creating derivative matrices.
 % Note that we are making the forward derivative only.
@@ -261,3 +294,12 @@ function [D] = deriv(dir, shape)
     D = sparse([i_ind(:); i_ind(:)], [i_ind(:), j_ind(:)], ...
                 [-ones(N,1); ones(N,1)], N, N);
 end % End of deriv private function.
+
+function my_plot(x)
+    imagesc(squeeze(x).', (max(abs(x(:))) + eps) * [-1 1]);
+    colorbar 
+    axis equal tight;
+    set(gca, 'YDir', 'normal');
+end
+
+

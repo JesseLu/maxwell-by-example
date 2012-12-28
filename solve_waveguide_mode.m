@@ -100,7 +100,7 @@ function [beta, E, H, J] = solve_waveguide_mode(...
 
     % Shift the matrix and find the appropriate eigenmode.
     % Find a few extra modes just to be sure we found the correct one.
-    [V, D] = eigs(A_r - shift * speye(n), mode_num + 5); 
+    [V, D] = eigs(A_r - shift * speye(n), mode_num + 2); 
     
     gamma = diag(D);
     [temp, ind] = sort(gamma); % Sort most negative first.

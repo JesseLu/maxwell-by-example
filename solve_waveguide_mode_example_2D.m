@@ -2,10 +2,10 @@
 
     omega = 0.12;
     dims = [80 80 1];
-    epsilon_wg = 3-1i;
+    epsilon_wg = -4-1i;
     dir = 'y+';
-    mode_num = 4;
-    wg_dims = [1e9 16];
+    mode_num = 1;
+    wg_dims = [1e9 8];
     
     if dir(1) == 'y'
         wg_dims = fliplr(wg_dims);
@@ -26,14 +26,14 @@
     mu = {ones(dims), ones(dims), ones(dims)};
 
     epsilon = {ones(dims), ones(dims), ones(dims)};
-    epsilon = add_planar(epsilon, 10, dims(3)/2, {my_rectangle, my_waveguide});
+    epsilon = add_planar(epsilon, 6, dims(3)/2, {my_rectangle, my_waveguide});
 
-    [s_prim, s_dual] = stretched_coordinates(omega, dims, [10 10 1]);
+    [s_prim, s_dual] = stretched_coordinates(omega, dims, [10 10 0]);
 
     % temp = mu;
-    for k = 1 : 3
-        mu{k} = real(epsilon{k});
-    end
+%     for k = 1 : 3
+%         mu{k} = real(epsilon{k});
+%     end
     % epsilon = temp;
 
     figure(1);

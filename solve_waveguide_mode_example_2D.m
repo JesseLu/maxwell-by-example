@@ -1,9 +1,9 @@
 %% solve_waveguide_mode_example_2D
 
-    omega = 0.12;
+    omega = 0.16;
     dims = [80 80 1];
-    epsilon_wg = -4-1i;
-    dir = 'y+';
+    epsilon_wg = 13;
+    dir = 'y';
     mode_num = 1;
     wg_dims = [1e9 8];
     
@@ -52,18 +52,28 @@
     % Solve
     x = A \ b;
 
+    % Get H-field.
+    y = my_diag(1./(-i*m*omega)) * (A2 * x);
+
     % Reshape solution and plot it.
     figure(2);
     for k = 1 : 3
         E{k} = reshape(x((k-1)*n+1 : k*n), dims);
+        H{k} = reshape(y((k-1)*n+1 : k*n), dims);
 
-        subplot(1, 3, k)
-        imagesc(abs(E{k})'); axis equal tight;
+        subplot(2, 3, k); imagesc(real(E{k})'); axis equal tight;
+        subplot(2, 3, k+3); imagesc(real(H{k})'); axis equal tight;
         set(gca, 'YDir', 'normal');
         colormap jet 
     end
     snapnow;
 
+    % Calculate the radiant power at every y-plane.
+    for k = 1 : dims(2)
+        avg_Hx = 0.5 * (H{1}(:,k,1) + H{1}(:,mod(k-2,dims(2))+1,1));
+        p(k) = dot(E{3}(:,k,1), avg_Hx);
+    end
+    subplot(2, 3, 1:2); plot(abs(p));
 
 
     % solve_waveguide_mode(omega, s_prim(2:3), s_dual(2:3), eps_wg, 2);

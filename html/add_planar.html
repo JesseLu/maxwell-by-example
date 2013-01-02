@@ -1,0 +1,357 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>add_planar</title><meta name="generator" content="MATLAB 8.0"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2013-01-02"><meta name="DC.source" content="add_planar.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, tt, code { font-size:12px; }
+pre { margin:0px 0px 20px; }
+pre.error { color:red; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>add_planar</h1><!--introduction--><p>Add a planar structure to epsilon (permittivity).</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Description</a></li><li><a href="#2">Input parameters</a></li><li><a href="#4">Output parameters</a></li><li><a href="#5">Example</a></li><li><a href="#7">Source code</a></li><li><a href="#11">Source code for private functions</a></li></ul></div><h2>Description<a name="1"></a></h2><p>Use this to add a simple planar structure (i.e. slab) consisting only of rectanges and circles to epsilon.</p><p><tt>add_planar</tt> takes care of the mess of dealing with Yee's grid, with its non-colocated x-, y-, and z-components. A uniformly-spaced grid is assumed.</p><pre class="codeinput"><span class="keyword">function</span> [epsilon] = add_planar(epsilon, z_thickness, z_center, in_plane_shapes)
+</pre><h2>Input parameters<a name="2"></a></h2><div><ul><li><tt>epsilon</tt> is a 3-element cell array representing the x-, y-, and z-components of the permittivity respectively. Each cell element is therefore an array of size <tt>(xx, yy, zz)</tt>.</li><li><tt>z_thickness</tt> and <tt>z_center</tt> describe the thickness and center-location of the slab in grid units.</li><li><tt>in_plane_shapes</tt> is a vector of shape structures which are drawn in order.   A shape structure can be created in the following way:</li></ul></div><pre class="language-matlab"><span class="comment">% For a rectangle that covers the entire grid.</span>
+my_rectangle = struct(<span class="string">'type'</span>, <span class="string">'rectangle'</span>, <span class="keyword">...</span>
+                   <span class="string">'position'</span>, [0 0], <span class="keyword">...</span>
+                   <span class="string">'size'</span>, [1e9 1e9], <span class="keyword">...</span>
+                   <span class="string">'permittivity'</span>, 12.25);
+</pre><pre class="language-matlab"><span class="comment">% For a circle.</span>
+my_circle = struct(<span class="string">'type'</span>, <span class="string">'circle'</span>, <span class="keyword">...</span>
+                   <span class="string">'position'</span>, [0 0], <span class="keyword">...</span>
+                   <span class="string">'radius'</span>, 24, <span class="keyword">...</span>
+                   <span class="string">'permittivity'</span>, 1);
+</pre><pre class="language-matlab"><span class="comment">% Put both shapes together.</span>
+my_shapes = {my_rectangle, my_circle};
+</pre><h2>Output parameters<a name="4"></a></h2><div><ul><li><tt>epsilon</tt> is the permittivity with the slab structure added.</li></ul></div><h2>Example<a name="5"></a></h2><p>The following code snippet, using <tt>my_shapes</tt> from above, creates a simple slab with a large hole in the middle.</p><pre class="language-matlab">epsilon = {ones(80,80,20), ones(80,80,20), ones(80,80,20)};
+epsilon = add_planar(epsilon, 5, 10, my_shapes); <span class="comment">% my_shapes from code above.</span>
+</pre><pre class="language-matlab"><span class="comment">% Visualize the structure.</span>
+<span class="keyword">for</span> k = 1 : 3
+    subplot(2, 3, k);
+    imagesc(epsilon{k}(:,:,10)'); axis <span class="string">equal</span> <span class="string">tight</span>;
+    subplot(2, 3, k+3);
+    imagesc(squeeze(epsilon{k}(:,40,:))'); axis <span class="string">equal</span> <span class="string">tight</span>;
+<span class="keyword">end</span>
+</pre><p>This example code produces the following figure.</p><p><img vspace="5" hspace="5" src="add_planar.png" alt=""> </p><h2>Source code<a name="7"></a></h2><pre class="codeinput">    <span class="comment">% Get the dimensions of the grid.</span>
+    <span class="comment">% Also get doubled dimensions so we can upsample in 2D in order to take care</span>
+    <span class="comment">% of the Yee grid offsets.</span>
+    dims = size(epsilon{1});
+    <span class="keyword">if</span> numel(dims) == 2 <span class="comment">% Take care of special 2D case.</span>
+        dims = [dims, 1];
+    <span class="keyword">end</span>
+
+    dd = 2 * dims(1:2); <span class="comment">% Doubled dimensions in 2D.</span>
+
+    epsilon_2D = zeros(dd); <span class="comment">% We draw on this 2D grid.</span>
+
+    <span class="comment">% Position data.</span>
+    x = (1:dd(1)) ./ 2;
+    y = (1:dd(2)) ./ 2;
+    [x, y] = ndgrid (x, y);
+
+    <span class="comment">% Find the center, shape positions are all relative to this point.</span>
+    center = [mean(mean(x)) mean(mean(y))]; <span class="comment">% Naive center.</span>
+    center = floor(2 * round(center)/2) + [0.5 0]; <span class="comment">% Slight offset for symmetry.</span>
+
+    <span class="comment">% Controls the amount of "smear" applied to structures.</span>
+    edge_len = 1; <span class="comment">% Hard-coded to 1 grid unit.</span>
+</pre><p>We are now set up to draw the in-plane shapes.</p><pre class="codeinput">    <span class="comment">% Draw the in-plane shapes (in order)</span>
+    <span class="keyword">for</span> k = 1 : length(in_plane_shapes)
+        s = in_plane_shapes{k};
+        <span class="keyword">switch</span> s.type
+            <span class="keyword">case</span> <span class="string">'circle'</span>
+                epsilon_2D = my_draw_circle(center + s.position, <span class="keyword">...</span>
+                                            s.radius, <span class="keyword">...</span>
+                                            s.permittivity, <span class="keyword">...</span>
+                                            epsilon_2D, x, y, edge_len);
+            <span class="keyword">case</span> <span class="string">'rectangle'</span>
+                epsilon_2D = my_draw_rectangle(center + s.position, <span class="keyword">...</span>
+                                            s.size, <span class="keyword">...</span>
+                                            s.permittivity, <span class="keyword">...</span>
+                                            epsilon_2D, x, y, edge_len);
+            <span class="keyword">otherwise</span>
+                error(<span class="string">'Invalid shape type.'</span>)
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+</pre><p>Now we downsample in order to obtain the values on the Yee grid.</p><pre class="codeinput">    <span class="comment">% Initial grid points (on the doubled grid) for the three vector components</span>
+    <span class="comment">% of epsilon.</span>
+    <span class="comment">% This is how the Yee grid offsets are taken into account.</span>
+    xi = [2 1 1];
+    yi = [1 2 1];
+
+    <span class="comment">% Downsample to get the values of epsilon on the (2D) Yee grid.</span>
+    <span class="keyword">for</span> k = 1 : 3
+        epsilon_slab{k} = epsilon_2D(xi(k):2:dd(1), yi(k):2:dd(2));
+    <span class="keyword">end</span>
+</pre><p>Finally, we use the 2D pattern to insert a 3D slab into epsilon.</p><pre class="codeinput">    zi = [0 0 0.5]; <span class="comment">% Offsets in the z-direction.</span>
+
+    <span class="keyword">for</span> k = 1 : 3
+        z = zi(k) + [1 : dims(3)];
+
+        <span class="comment">% Make the weighting function.</span>
+        w = (z_thickness/2 - abs(z - z_center)) / edge_len;
+        w = 1 * (w &gt; 0.5) + (w+0.5) .* ((w&gt;-0.5) &amp; (w &lt;= 0.5));
+
+        <span class="comment">% Apply the weighting function.</span>
+        <span class="keyword">for</span> l = 1 : dims(3)
+            <span class="keyword">if</span> w(l) ~= 0
+                epsilon{k}(:,:,l) = (1-w(l)) * epsilon{k}(:,:,l) + <span class="keyword">...</span>
+                                    w(l) * epsilon_slab{k};
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+</pre><h2>Source code for private functions<a name="11"></a></h2><p>Here are the private functions used for drawing circles and rectangles.</p><pre class="codeinput"><span class="keyword">function</span> [epsilon] = my_draw_circle (center, radius, eps_circ, epsilon, x, y, edge_length)
+<span class="comment">% Draw a circle.</span>
+    r = sqrt ((x-center(1)).^2 + (y - center(2)).^2);
+
+    weight = (radius - r)./edge_length + 1/2;
+    weight = weight .* (weight &gt; 0); <span class="comment">% bottom caps at 0</span>
+    weight = (weight-1) .* (weight &lt; 1) + 1; <span class="comment">% top caps at 1</span>
+
+    w = weight;
+    epsilon = epsilon .* (1-w) + eps_circ .* w;
+
+<span class="keyword">function</span> [epsilon] = my_draw_rectangle (center, width, eps_rect, epsilon, x, y, edge_length)
+<span class="comment">% Draw a rectangle.</span>
+    xy = {x, y};
+    <span class="keyword">for</span> cnt = 1 : 2
+        weight{cnt} = (width(cnt)/2 - abs (xy{cnt}-center(cnt)))./edge_length + 1/2;
+        weight{cnt} = weight{cnt} .* (weight{cnt} &gt; 0); <span class="comment">% bottom caps at 0</span>
+        weight{cnt} = (weight{cnt}-1) .* (weight{cnt} &lt; 1) + 1; <span class="comment">% top caps at 1</span>
+    <span class="keyword">end</span>
+    w = weight{1}.*weight{2};
+    epsilon = epsilon .* (1-w) + eps_rect .* w;
+</pre><p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2012b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% add_planar
+% Add a planar structure to epsilon (permittivity).
+
+%% Description
+% Use this to add a simple planar structure (i.e. slab) 
+% consisting only of rectanges and circles to epsilon.
+%
+% |add_planar| takes care of the mess of dealing with Yee's grid,
+% with its non-colocated x-, y-, and z-components. 
+% A uniformly-spaced grid is assumed.
+
+
+function [epsilon] = add_planar(epsilon, z_thickness, z_center, in_plane_shapes)
+%% Input parameters
+% * |epsilon| is a 3-element cell array representing the x-, y-, and z-components of the permittivity respectively. Each cell element is therefore an array of size |(xx, yy, zz)|. 
+% * |z_thickness| and |z_center| describe the thickness and center-location of the slab in grid units.
+% * |in_plane_shapes| is a vector of shape structures which are drawn in order.
+%   A shape structure can be created in the following way:
+
+%%
+%   % For a rectangle that covers the entire grid.
+%   my_rectangle = struct('type', 'rectangle', ...
+%                      'position', [0 0], ...
+%                      'size', [1e9 1e9], ...
+%                      'permittivity', 12.25);
+%
+%   % For a circle.
+%   my_circle = struct('type', 'circle', ...
+%                      'position', [0 0], ...
+%                      'radius', 24, ...
+%                      'permittivity', 1);
+%
+%   % Put both shapes together.
+%   my_shapes = {my_rectangle, my_circle};
+
+%% Output parameters
+% * |epsilon| is the permittivity with the slab structure added.
+
+%% Example
+% The following code snippet, using |my_shapes| from above,
+% creates a simple slab with a large hole in the middle.
+%   
+%   epsilon = {ones(80,80,20), ones(80,80,20), ones(80,80,20)};
+%   epsilon = add_planar(epsilon, 5, 10, my_shapes); % my_shapes from code above.
+%
+%   % Visualize the structure.
+%   for k = 1 : 3
+%       subplot(2, 3, k);
+%       imagesc(epsilon{k}(:,:,10)'); axis equal tight;
+%       subplot(2, 3, k+3);
+%       imagesc(squeeze(epsilon{k}(:,40,:))'); axis equal tight;
+%   end
+%
+
+%%
+% This example code produces the following figure.
+%
+%
+% <<add_planar.png>>
+%
+
+
+%% Source code
+
+    % Get the dimensions of the grid.
+    % Also get doubled dimensions so we can upsample in 2D in order to take care
+    % of the Yee grid offsets.
+    dims = size(epsilon{1});
+    if numel(dims) == 2 % Take care of special 2D case.
+        dims = [dims, 1];
+    end
+
+    dd = 2 * dims(1:2); % Doubled dimensions in 2D.
+
+    epsilon_2D = zeros(dd); % We draw on this 2D grid.
+
+    % Position data.
+    x = (1:dd(1)) ./ 2;
+    y = (1:dd(2)) ./ 2;
+    [x, y] = ndgrid (x, y);
+
+    % Find the center, shape positions are all relative to this point.
+    center = [mean(mean(x)) mean(mean(y))]; % Naive center.
+    center = floor(2 * round(center)/2) + [0.5 0]; % Slight offset for symmetry.
+
+    % Controls the amount of "smear" applied to structures.
+    edge_len = 1; % Hard-coded to 1 grid unit.
+    
+
+%% 
+% We are now set up to draw the in-plane shapes.
+
+    % Draw the in-plane shapes (in order)
+    for k = 1 : length(in_plane_shapes)
+        s = in_plane_shapes{k};
+        switch s.type
+            case 'circle'
+                epsilon_2D = my_draw_circle(center + s.position, ...
+                                            s.radius, ...
+                                            s.permittivity, ...
+                                            epsilon_2D, x, y, edge_len);
+            case 'rectangle'
+                epsilon_2D = my_draw_rectangle(center + s.position, ...
+                                            s.size, ...
+                                            s.permittivity, ...
+                                            epsilon_2D, x, y, edge_len);
+            otherwise
+                error('Invalid shape type.')
+        end
+    end
+
+%%
+% Now we downsample in order to obtain the values on the Yee grid.
+
+    % Initial grid points (on the doubled grid) for the three vector components
+    % of epsilon.
+    % This is how the Yee grid offsets are taken into account.
+    xi = [2 1 1];
+    yi = [1 2 1];
+
+    % Downsample to get the values of epsilon on the (2D) Yee grid.
+    for k = 1 : 3
+        epsilon_slab{k} = epsilon_2D(xi(k):2:dd(1), yi(k):2:dd(2));
+    end
+
+%%
+% Finally, we use the 2D pattern to insert a 3D slab into epsilon.
+
+    zi = [0 0 0.5]; % Offsets in the z-direction.
+
+    for k = 1 : 3
+        z = zi(k) + [1 : dims(3)];
+
+        % Make the weighting function.
+        w = (z_thickness/2 - abs(z - z_center)) / edge_len;
+        w = 1 * (w > 0.5) + (w+0.5) .* ((w>-0.5) & (w <= 0.5));
+
+        % Apply the weighting function.
+        for l = 1 : dims(3)
+            if w(l) ~= 0
+                epsilon{k}(:,:,l) = (1-w(l)) * epsilon{k}(:,:,l) + ...
+                                    w(l) * epsilon_slab{k};
+            end
+        end
+    end
+
+
+    
+%% Source code for private functions
+% Here are the private functions used for drawing circles and rectangles.
+
+function [epsilon] = my_draw_circle (center, radius, eps_circ, epsilon, x, y, edge_length)
+% Draw a circle.
+    r = sqrt ((x-center(1)).^2 + (y - center(2)).^2);
+
+    weight = (radius - r)./edge_length + 1/2;
+    weight = weight .* (weight > 0); % bottom caps at 0
+    weight = (weight-1) .* (weight < 1) + 1; % top caps at 1
+
+    w = weight;
+    epsilon = epsilon .* (1-w) + eps_circ .* w;
+
+function [epsilon] = my_draw_rectangle (center, width, eps_rect, epsilon, x, y, edge_length)
+% Draw a rectangle.
+    xy = {x, y};
+    for cnt = 1 : 2
+        weight{cnt} = (width(cnt)/2 - abs (xy{cnt}-center(cnt)))./edge_length + 1/2;
+        weight{cnt} = weight{cnt} .* (weight{cnt} > 0); % bottom caps at 0
+        weight{cnt} = (weight{cnt}-1) .* (weight{cnt} < 1) + 1; % top caps at 1
+    end
+    w = weight{1}.*weight{2};
+    epsilon = epsilon .* (1-w) + eps_rect .* w;
+
+
+
+##### SOURCE END #####
+--></body></html>

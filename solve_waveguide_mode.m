@@ -6,9 +6,9 @@
 % including the wave-vector, E- and H-fields, as well as the current excitation
 % needed for omni- or uni-directional excitation.
 
-function [beta, E, H, J] = solve_waveguide_mode(...
-                                        omega, s_prim, s_dual, mu, epsilon, ...
-                                        pos, dir, mode_num)
+function [beta, E, H, J] = solve_waveguide_mode(omega, s_prim, s_dual, ...
+                                                mu, epsilon, ...
+                                                pos, dir, mode_num)
 
 %% Input parameters
 % The input parameters are very similar to those which describe a simulation,
@@ -101,6 +101,7 @@ function [beta, E, H, J] = solve_waveguide_mode(...
     % Shift the matrix and find the appropriate eigenmode.
     % Find a few extra modes just to be sure we found the correct one.
     [V, D] = eigs(A_r - shift * speye(n), mode_num + 2); 
+
     
     gamma = diag(D);
     [temp, ind] = sort(gamma); % Sort most negative first.
@@ -129,6 +130,8 @@ function [beta, E, H, J] = solve_waveguide_mode(...
     % Wave-vector.
     beta = i * sqrt(lambda);
     beta = sign(real(beta)) * beta; % Force real part of beta to be positive.
+
+    % TODO: Perform correction on beta.
 
     % Fields.
     [E, H, J_small, E_err, H_err] = get_wg_fields(beta, v);
@@ -171,11 +174,14 @@ function [beta, E, H, J] = solve_waveguide_mode(...
     % Plot fields.
     f = {E{:}, H{:}};
     title_text = {'Ex', 'Ey', 'Ez', 'Hx', 'Hy', 'Hz'};
-    for k = 1 : 6
-        subplot(2, 3, k);
-        my_plot(reshape(real(f{k}), shape));
-        title(title_text{k});
-    end
+%     for k = 1 : 6
+%         subplot(2, 3, k);
+%         my_plot(reshape(real(f{k}), shape));
+%         title(title_text{k});
+%     end
+    subplot 121; plot(real([f{1}, f{2}, f{3}, f{4}, f{5}, f{6}]), '.-');
+    subplot 122; plot(imag([f{1}, f{2}, f{3}, f{4}, f{5}, f{6}]), '.-');
+    legend(title_text);
     
     % Print out the errors.
     fprintf('Error: %e (H-field), %e (E-field).\n', H_err, E_err);
@@ -258,12 +264,40 @@ function [A, get_wg_fields] = wg_operator(omega, s_prim, s_dual, epsilon, mu, ..
     vec2field = @(z) reorder(to_field(z));
 
     % Secondary operator that returns ordered fields.
+    % The fields are also normalized so that the E- and H-fields are those
+    % which give a Poynting vector of 1.
+    % Also, subsequent solves should give the fields with the same phase
+    % factor.
+    % Lastly, J should be normalized to produce waveguide modes of power
+    % 1 in both directions.
     function [E, H, J, E_err, H_err] = wg_fields(beta, v)
-        E = vec2field(v2e(beta, v));
-        H = vec2field(v2h(beta, v));
-        J = vec2field(v2j(v));
-        E_err = e_err(beta, v2e(beta, v));
-        H_err = h_err(beta, v2h(beta, v));
+        % Obtain E- and H-fields (still in vector form).
+        e = v2e(beta, v);
+        h = v2h(beta, v);
+
+        % Compute a normalization factor for power of 1 and constant angle
+        % waveguide modes.
+        norm_amplitude = abs(dot(e(1:n), h(n+1:2*n)) + ...
+                            dot(-e(n+1:2*n), h(1:n)))^-0.5;
+        [~, ind] = max(abs(e));
+        norm_angle = -angle(e(ind));
+        norm_factor = norm_amplitude * exp(i * norm_angle);
+
+        % Normalize so that the fields produce Poynting vector of 1.
+        e = norm_factor * e;
+        h = norm_factor * h;
+        v = norm_factor * v;
+
+        E = vec2field(e);
+        H = vec2field(h);
+
+        % Normalization factor for current excitation.
+        nf_j = sqrt(2 * sin(beta * real(s_dual{prop_dir})) / omega);
+        nf_j = 1;
+        nf_j = 2 * cos(beta/2) ;
+        J = vec2field(nf_j * v2j(v));
+        E_err = e_err(beta, e);
+        H_err = h_err(beta, h);
     end
 
     get_wg_fields = @wg_fields; % Function handle to get all the important info.

@@ -6,65 +6,68 @@
    <!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>solve_waveguide_mode</title><meta name="generator" content="MATLAB 7.13"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2012-12-27"><meta name="DC.source" content="solve_waveguide_mode.m"><style type="text/css">
+      --><title>solve_waveguide_mode</title><meta name="generator" content="MATLAB 8.0"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2013-01-02"><meta name="DC.source" content="solve_waveguide_mode.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
 
-body {
-  background-color: white;
-  margin:10px;
-}
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
 
-h1 {
-  color: #990000; 
-  font-size: x-large;
-}
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
 
-h2 {
-  color: #990000;
-  font-size: medium;
-}
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
 
-/* Make the text shrink to fit narrow windows, but not stretch too far in 
-wide windows. */ 
-p,h1,h2,div.content div {
-  max-width: 600px;
-  /* Hack for IE6 */
-  width: auto !important; width: 600px;
-}
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img { margin-bottom:0px; } 
 
-pre.codeinput {
-  background: #EEEEEE;
-  padding: 10px;
-}
-@media print {
-  pre.codeinput {word-wrap:break-word; width:100%;}
-} 
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
 
-span.keyword {color: #0000FF}
-span.comment {color: #228B22}
-span.string {color: #A020F0}
-span.untermstring {color: #B20000}
-span.syscmd {color: #B28C00}
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
 
-pre.codeoutput {
-  color: #666666;
-  padding: 10px;
-}
+pre, tt, code { font-size:12px; }
+pre { margin:0px 0px 20px; }
+pre.error { color:red; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
 
-pre.error {
-  color: red;
-}
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
 
-p.footer {
-  text-align: right;
-  font-size: xx-small;
-  font-weight: lighter;
-  font-style: italic;
-  color: gray;
-}
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
 
-  </style></head><body><div class="content"><h1>solve_waveguide_mode</h1><!--introduction--><p>Find the mode of a waveguide, as well as the current excitation for it.</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Description</a></li><li><a href="#3">Input parameters</a></li><li><a href="#4">Output parameters</a></li><li><a href="#5">Parse inputs</a></li><li><a href="#6">Build the operator</a></li><li><a href="#7">Solve for largest-magnitude eigenvalue of the real operator</a></li><li><a href="#8">Solve for the desired eigenvector of the real operator</a></li><li><a href="#9">Solve for the eigenvector of the full operator</a></li><li><a href="#10">Calculate output parameters</a></li><li><a href="#12">Private wg_operator function.</a></li><li><a href="#13">Other private functions.</a></li></ul></div><h2>Description<a name="1"></a></h2><p>Computes the propagation mode for a nanophotonic waveguide structure including the wave-vector, E- and H-fields, as well as the current excitation needed for omni- or uni-directional excitation.</p><pre class="codeinput"><span class="keyword">function</span> [beta, E, H, J] = solve_waveguide_mode(<span class="keyword">...</span>
-                                        omega, s_prim, s_dual, mu, epsilon, <span class="keyword">...</span>
-                                        pos, dir, mode_num)
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>solve_waveguide_mode</h1><!--introduction--><p>Find the mode of a waveguide, as well as the current excitation for it.</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Description</a></li><li><a href="#3">Input parameters</a></li><li><a href="#4">Output parameters</a></li><li><a href="#5">Parse inputs</a></li><li><a href="#6">Build the operator</a></li><li><a href="#7">Solve for largest-magnitude eigenvalue of the real operator</a></li><li><a href="#8">Solve for the desired eigenvector of the real operator</a></li><li><a href="#9">Solve for the eigenvector of the full operator</a></li><li><a href="#10">Calculate output parameters</a></li><li><a href="#12">Private wg_operator function.</a></li><li><a href="#13">Other private functions.</a></li></ul></div><h2>Description<a name="1"></a></h2><p>Computes the propagation mode for a nanophotonic waveguide structure including the wave-vector, E- and H-fields, as well as the current excitation needed for omni- or uni-directional excitation.</p><pre class="codeinput"><span class="keyword">function</span> [beta, E, H, J] = solve_waveguide_mode(omega, s_prim, s_dual, <span class="keyword">...</span>
+                                                mu, epsilon, <span class="keyword">...</span>
+                                                pos, dir, mode_num)
 </pre><h2>Input parameters<a name="3"></a></h2><p>The input parameters are very similar to those which describe a simulation, with the exception that most of the parameters are in two-dimensions (x and y) only.</p><p>Additionally, parameters describing the location, direction, and order of the waveguide mode are included.</p><div><ul><li><tt>omega</tt>, <tt>s_prim</tt>, <tt>s_dual</tt>, <tt>mu</tt>, and <tt>epsilon</tt> should be identical   to the values used to desribe any simulation.</li><li><tt>pos</tt> is a cell array of 2 three-element vectors describing the bounded   plane on which to excite the waveguide mode.   Specifically, <tt>pos</tt> should look like <tt>{[x0 y0 z0], [x1 y1 z1]}</tt>.   Note that if propagation in the x-direction is desired, then <tt>x0</tt> should   equal <tt>x1</tt>.</li><li><tt>dir</tt> is a string denoting the diretion of propagation for the waveguide.   Possible values include <tt>'x'</tt>, <tt>'y'</tt>, and <tt>'z'</tt> which denote propagation   in both the positive and negative directions as well as unidirectional   excitation directions <tt>'x+'</tt>, <tt>'x-'</tt>, <tt>'y+'</tt>, <tt>'y-'</tt>, <tt>'z+'</tt>, and <tt>'z-'</tt>.</li><li><tt>mode_num</tt> is the order of the mode to compute where <tt>1</tt> denotes the   fundamental mode, <tt>2</tt> denotes the second order mode and so on.</li></ul></div><h2>Output parameters<a name="4"></a></h2><div><ul><li><tt>beta</tt> is the wavevector of the mode.</li><li><tt>E</tt> and <tt>H</tt> are the E- and H-fields of the mode.   Note that the size of each component array is matched to the bounded   plane specified by the <tt>pos</tt> input parameter.</li><li><tt>J</tt> is the current excitation needed for the mode.   Unlike <tt>E</tt> and <tt>H</tt>, <tt>J</tt> spans the entire simulation space and includes   a plan in-front of the bounded plane in order to enable a unidirectional   source.</li></ul></div><h2>Parse inputs<a name="5"></a></h2><pre class="codeinput">    <span class="comment">% Shorthand for the bounded plane.</span>
     p0 = pos{1};
     p1 = pos{2};
@@ -102,9 +105,12 @@ p.footer {
     <span class="keyword">end</span>
     ev_max = (v' * A_r * v) / norm(v)^2; <span class="comment">% Rayleigh quotient.</span>
     shift = abs(ev_max); <span class="comment">% Shift works for both positive and negative ev_max.</span>
-</pre><h2>Solve for the desired eigenvector of the real operator<a name="8"></a></h2><p>Taking the real operator, we a few of the most negative eigenmodes, and then choose the one we are interested in.</p><pre class="codeinput">    <span class="comment">% Shift the matrix and find the appropriate eigenmode.</span>
+</pre><h2>Solve for the desired eigenvector of the real operator<a name="8"></a></h2><p>Taking the real operator, we a few of the most negative eigenmodes, and then choose the one we are interested in.</p><pre class="codeinput">    opts.v0 = randn(n, 1);
+
+    <span class="comment">% Shift the matrix and find the appropriate eigenmode.</span>
     <span class="comment">% Find a few extra modes just to be sure we found the correct one.</span>
-    [V, D] = eigs(A_r - shift * speye(n), mode_num + 5);
+    [V, D] = eigs(A_r - shift * speye(n), mode_num + 2, <span class="string">'LM'</span>, opts);
+
 
     gamma = diag(D);
     [temp, ind] = sort(gamma); <span class="comment">% Sort most negative first.</span>
@@ -165,17 +171,24 @@ p.footer {
     <span class="comment">% Plot fields.</span>
     f = {E{:}, H{:}};
     title_text = {<span class="string">'Ex'</span>, <span class="string">'Ey'</span>, <span class="string">'Ez'</span>, <span class="string">'Hx'</span>, <span class="string">'Hy'</span>, <span class="string">'Hz'</span>};
-    <span class="keyword">for</span> k = 1 : 6
-        subplot(2, 3, k);
-        my_plot(reshape(real(f{k}), shape));
-        title(title_text{k});
-    <span class="keyword">end</span>
+<span class="comment">%     for k = 1 : 6</span>
+<span class="comment">%         subplot(2, 3, k);</span>
+<span class="comment">%         my_plot(reshape(real(f{k}), shape));</span>
+<span class="comment">%         title(title_text{k});</span>
+<span class="comment">%     end</span>
+    subplot <span class="string">111</span>;
+    plot(abs([f{1}, f{2}, f{3}, f{4}, f{5}, f{6}]), <span class="string">'.-'</span>);
+    legend(title_text);
 
     <span class="comment">% Print out the errors.</span>
     fprintf(<span class="string">'Error: %e (H-field), %e (E-field).\n'</span>, H_err, E_err);
-</pre><pre class="codeinput"><span class="keyword">end</span> <span class="comment">% End of solve_waveguide_mode function.</span>
+</pre><pre class="codeinput"><span class="keyword">end</span> <span class="comment">% End of solve_waveguide_mode function</span>
 </pre><h2>Private wg_operator function.<a name="12"></a></h2><pre class="codeinput"><span class="keyword">function</span> [A, get_wg_fields] = wg_operator(omega, s_prim, s_dual, epsilon, mu, <span class="keyword">...</span>
                                             prop_dir, shape)
+<span class="comment">% Builds the operator (represented by matrix A), which defines the eigenmode</span>
+<span class="comment">% problem.</span>
+<span class="comment">% Also provides the function get_wg_fields to obtain relevant parameters from</span>
+<span class="comment">% the solution to the eigenmode problem.</span>
 
     <span class="comment">% Indices of the non-propagating directions.</span>
     xdir = mod(prop_dir + 1 - 1, 3) + 1;
@@ -245,11 +258,22 @@ p.footer {
 
     <span class="comment">% Secondary operator that returns ordered fields.</span>
     <span class="keyword">function</span> [E, H, J, E_err, H_err] = wg_fields(beta, v)
-        E = vec2field(v2e(beta, v));
-        H = vec2field(v2h(beta, v));
+        <span class="comment">% Obtain E- and H-fields (still in vector form).</span>
+        e = v2e(beta, v);
+        h = v2h(beta, v);
+
+        <span class="comment">% Normalize so that the fields produce Poynting vector of 1.</span>
+        nf = abs(dot(e(1:n), h(n+1:2*n)) + dot(-e(n+1:2*n), h(1:n)))^-0.5;
+        e = nf * e;
+        h = nf * h;
+        v = nf * v;
+
+        E = vec2field(e);
+        H = vec2field(h);
+
         J = vec2field(v2j(v));
-        E_err = e_err(beta, v2e(beta, v));
-        H_err = h_err(beta, v2h(beta, v));
+        E_err = e_err(beta, e);
+        H_err = h_err(beta, h);
     <span class="keyword">end</span>
 
     get_wg_fields = @wg_fields; <span class="comment">% Function handle to get all the important info.</span>
@@ -284,8 +308,7 @@ p.footer {
     axis <span class="string">equal</span> <span class="string">tight</span>;
     set(gca, <span class="string">'YDir'</span>, <span class="string">'normal'</span>);
 <span class="keyword">end</span>
-</pre><p class="footer"><br>
-      Published with MATLAB&reg; 7.13<br></p></div><!--
+</pre><p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2012b</a><br></p></div><!--
 ##### SOURCE BEGIN #####
 %% solve_waveguide_mode
 % Find the mode of a waveguide, as well as the current excitation for it.
@@ -295,9 +318,9 @@ p.footer {
 % including the wave-vector, E- and H-fields, as well as the current excitation
 % needed for omni- or uni-directional excitation.
 
-function [beta, E, H, J] = solve_waveguide_mode(...
-                                        omega, s_prim, s_dual, mu, epsilon, ...
-                                        pos, dir, mode_num)
+function [beta, E, H, J] = solve_waveguide_mode(omega, s_prim, s_dual, ...
+                                                mu, epsilon, ...
+                                                pos, dir, mode_num)
 
 %% Input parameters
 % The input parameters are very similar to those which describe a simulation,
@@ -387,9 +410,12 @@ function [beta, E, H, J] = solve_waveguide_mode(...
     % Taking the real operator, we a few of the most negative eigenmodes,
     % and then choose the one we are interested in.
 
+    opts.v0 = randn(n, 1);
+
     % Shift the matrix and find the appropriate eigenmode.
     % Find a few extra modes just to be sure we found the correct one.
-    [V, D] = eigs(A_r - shift * speye(n), mode_num + 5); 
+    [V, D] = eigs(A_r - shift * speye(n), mode_num + 2, 'LM', opts); 
+
     
     gamma = diag(D);
     [temp, ind] = sort(gamma); % Sort most negative first.
@@ -460,21 +486,28 @@ function [beta, E, H, J] = solve_waveguide_mode(...
     % Plot fields.
     f = {E{:}, H{:}};
     title_text = {'Ex', 'Ey', 'Ez', 'Hx', 'Hy', 'Hz'};
-    for k = 1 : 6
-        subplot(2, 3, k);
-        my_plot(reshape(real(f{k}), shape));
-        title(title_text{k});
-    end
+%     for k = 1 : 6
+%         subplot(2, 3, k);
+%         my_plot(reshape(real(f{k}), shape));
+%         title(title_text{k});
+%     end
+    subplot 111;
+    plot(abs([f{1}, f{2}, f{3}, f{4}, f{5}, f{6}]), '.-');
+    legend(title_text);
     
     % Print out the errors.
     fprintf('Error: %e (H-field), %e (E-field).\n', H_err, E_err);
 
 
-end % End of solve_waveguide_mode function.
+end % End of solve_waveguide_mode function
 
 %% Private wg_operator function.
 function [A, get_wg_fields] = wg_operator(omega, s_prim, s_dual, epsilon, mu, ...
                                             prop_dir, shape)
+% Builds the operator (represented by matrix A), which defines the eigenmode 
+% problem.
+% Also provides the function get_wg_fields to obtain relevant parameters from
+% the solution to the eigenmode problem.
 
     % Indices of the non-propagating directions.
     xdir = mod(prop_dir + 1 - 1, 3) + 1; 
@@ -544,11 +577,22 @@ function [A, get_wg_fields] = wg_operator(omega, s_prim, s_dual, epsilon, mu, ..
 
     % Secondary operator that returns ordered fields.
     function [E, H, J, E_err, H_err] = wg_fields(beta, v)
-        E = vec2field(v2e(beta, v));
-        H = vec2field(v2h(beta, v));
+        % Obtain E- and H-fields (still in vector form).
+        e = v2e(beta, v);
+        h = v2h(beta, v);
+
+        % Normalize so that the fields produce Poynting vector of 1.
+        nf = abs(dot(e(1:n), h(n+1:2*n)) + dot(-e(n+1:2*n), h(1:n)))^-0.5;
+        e = nf * e;
+        h = nf * h;
+        v = nf * v;
+
+        E = vec2field(e);
+        H = vec2field(h);
+        
         J = vec2field(v2j(v));
-        E_err = e_err(beta, v2e(beta, v));
-        H_err = h_err(beta, v2h(beta, v));
+        E_err = e_err(beta, e);
+        H_err = h_err(beta, h);
     end
 
     get_wg_fields = @wg_fields; % Function handle to get all the important info.

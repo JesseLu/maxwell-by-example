@@ -1,0 +1,239 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>solve_waveguide_mode_example_2D</title><meta name="generator" content="MATLAB 8.0"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2013-01-02"><meta name="DC.source" content="solve_waveguide_mode_example_2D.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, tt, code { font-size:12px; }
+pre { margin:0px 0px 20px; }
+pre.error { color:red; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>solve_waveguide_mode_example_2D</h1><pre class="codeinput">    omega = 0.16;
+    dims = [80 80 1];
+    epsilon_wg = 13;
+    dir = <span class="string">'y'</span>;
+    mode_num = 1;
+    wg_dims = [1e9 8];
+
+    <span class="keyword">if</span> dir(1) == <span class="string">'y'</span>
+        wg_dims = fliplr(wg_dims);
+    <span class="keyword">end</span>
+
+    <span class="comment">% A rectangle that covers the entire grid.</span>
+    my_rectangle = struct(<span class="string">'type'</span>, <span class="string">'rectangle'</span>, <span class="keyword">...</span>
+                     <span class="string">'position'</span>, [0 0], <span class="keyword">...</span>
+                     <span class="string">'size'</span>, [1e9 1e9], <span class="keyword">...</span>
+                     <span class="string">'permittivity'</span>, 1);
+
+    <span class="comment">% Waveguide running in the x-direction.</span>
+    my_waveguide = struct(<span class="string">'type'</span>, <span class="string">'rectangle'</span>, <span class="keyword">...</span>
+                     <span class="string">'position'</span>, [0 0], <span class="keyword">...</span>
+                     <span class="string">'size'</span>, wg_dims, <span class="keyword">...</span>
+                     <span class="string">'permittivity'</span>, epsilon_wg);
+
+    mu = {ones(dims), ones(dims), ones(dims)};
+
+    epsilon = {ones(dims), ones(dims), ones(dims)};
+    epsilon = add_planar(epsilon, 6, dims(3)/2, {my_rectangle, my_waveguide});
+
+    [s_prim, s_dual] = stretched_coordinates(omega, dims, [10 10 0]);
+
+    <span class="comment">% temp = mu;</span>
+<span class="comment">%     for k = 1 : 3</span>
+<span class="comment">%         mu{k} = real(epsilon{k});</span>
+<span class="comment">%     end</span>
+    <span class="comment">% epsilon = temp;</span>
+
+    figure(1);
+    [beta, E, H, J] = solve_waveguide_mode( <span class="keyword">...</span>
+                omega, s_prim, s_dual, mu, epsilon, <span class="keyword">...</span>
+                {[1 dims(2)/2 1], [dims(1) dims(2)/2 dims(3)]}, dir, mode_num);
+
+    <span class="comment">% Get ingredient matrices and vectors.</span>
+    J{3} = abs(J{3});
+    [A1, A2, m, e, b] = maxwell_matrices(omega, s_prim, s_dual, mu, epsilon, J);
+
+    <span class="comment">% Form full matrix.</span>
+    n = prod(dims);
+    my_diag = @(z) spdiags(z(:), 0, numel(z), numel(z));
+    A = A1 * my_diag(m.^-1) * A2 - omega^2 * my_diag(e);
+
+    <span class="comment">% Solve</span>
+    x = A \ b;
+
+    <span class="comment">% Get H-field.</span>
+    y = my_diag(1./(-i*m*omega)) * (A2 * x);
+
+    <span class="comment">% Reshape solution and plot it.</span>
+    figure(2);
+    <span class="keyword">for</span> k = 1 : 3
+        E{k} = reshape(x((k-1)*n+1 : k*n), dims);
+        H{k} = reshape(y((k-1)*n+1 : k*n), dims);
+
+        subplot(1, 3, k)
+        imagesc(real(E{k})'); axis <span class="string">equal</span> <span class="string">tight</span>;
+        set(gca, <span class="string">'YDir'</span>, <span class="string">'normal'</span>);
+        colormap <span class="string">jet</span>
+    <span class="keyword">end</span>
+    snapnow;
+
+    <span class="comment">% Calculate the radiant power at every y-plane.</span>
+    dims
+    <span class="keyword">for</span> k = 1 : dims(2)
+        avg_Hx = 0.5 * (H{1}(:,k,1) + H{1}(:,mod(k-2,dims(2))+1,1));
+        p(k) = dot(E{3}(:,k,1), avg_Hx);
+    <span class="keyword">end</span>
+    subplot(1, 3, 1:2); plot(abs(p));
+
+
+    <span class="comment">% solve_waveguide_mode(omega, s_prim(2:3), s_dual(2:3), eps_wg, 2);</span>
+</pre><pre class="codeoutput">Error: 2.832546e-16 (H-field), 1.106652e-14 (E-field).
+</pre><img vspace="5" hspace="5" src="solve_waveguide_mode_example_2D_01.png" alt=""> <img vspace="5" hspace="5" src="solve_waveguide_mode_example_2D_02.png" alt=""> <pre class="codeoutput">
+dims =
+
+    80    80     1
+
+</pre><img vspace="5" hspace="5" src="solve_waveguide_mode_example_2D_03.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2012b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% solve_waveguide_mode_example_2D
+
+    omega = 0.16;
+    dims = [80 80 1];
+    epsilon_wg = 13;
+    dir = 'y';
+    mode_num = 1;
+    wg_dims = [1e9 8];
+    
+    if dir(1) == 'y'
+        wg_dims = fliplr(wg_dims);
+    end
+
+    % A rectangle that covers the entire grid.
+    my_rectangle = struct('type', 'rectangle', ...
+                     'position', [0 0], ...
+                     'size', [1e9 1e9], ...
+                     'permittivity', 1);
+
+    % Waveguide running in the x-direction.
+    my_waveguide = struct('type', 'rectangle', ...
+                     'position', [0 0], ...
+                     'size', wg_dims, ...
+                     'permittivity', epsilon_wg);
+
+    mu = {ones(dims), ones(dims), ones(dims)};
+
+    epsilon = {ones(dims), ones(dims), ones(dims)};
+    epsilon = add_planar(epsilon, 6, dims(3)/2, {my_rectangle, my_waveguide});
+
+    [s_prim, s_dual] = stretched_coordinates(omega, dims, [10 10 0]);
+
+    % temp = mu;
+%     for k = 1 : 3
+%         mu{k} = real(epsilon{k});
+%     end
+    % epsilon = temp;
+
+    figure(1);
+    [beta, E, H, J] = solve_waveguide_mode( ...
+                omega, s_prim, s_dual, mu, epsilon, ...
+                {[1 dims(2)/2 1], [dims(1) dims(2)/2 dims(3)]}, dir, mode_num);
+
+    % Get ingredient matrices and vectors.
+    J{3} = abs(J{3});
+    [A1, A2, m, e, b] = maxwell_matrices(omega, s_prim, s_dual, mu, epsilon, J); 
+
+    % Form full matrix.
+    n = prod(dims);
+    my_diag = @(z) spdiags(z(:), 0, numel(z), numel(z));
+    A = A1 * my_diag(m.^-1) * A2 - omega^2 * my_diag(e);
+
+    % Solve
+    x = A \ b;
+
+    % Get H-field.
+    y = my_diag(1./(-i*m*omega)) * (A2 * x);
+
+    % Reshape solution and plot it.
+    figure(2);
+    for k = 1 : 3
+        E{k} = reshape(x((k-1)*n+1 : k*n), dims);
+        H{k} = reshape(y((k-1)*n+1 : k*n), dims);
+
+        subplot(1, 3, k)
+        imagesc(real(E{k})'); axis equal tight;
+        set(gca, 'YDir', 'normal');
+        colormap jet 
+    end
+    snapnow;
+
+    % Calculate the radiant power at every y-plane.
+    dims
+    for k = 1 : dims(2)
+        avg_Hx = 0.5 * (H{1}(:,k,1) + H{1}(:,mod(k-2,dims(2))+1,1));
+        p(k) = dot(E{3}(:,k,1), avg_Hx);
+    end
+    subplot(1, 3, 1:2); plot(abs(p));
+
+
+    % solve_waveguide_mode(omega, s_prim(2:3), s_dual(2:3), eps_wg, 2);
+
+
+##### SOURCE END #####
+--></body></html>

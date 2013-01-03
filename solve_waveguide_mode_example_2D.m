@@ -1,10 +1,10 @@
 %% solve_waveguide_mode_example_2D
-
-    omega = 0.3;
+function [pow, beta] = solve_waveguide_mode_example_2D(omega)
+    % omega = 0.3;
     dims = [80 80 1];
-    epsilon_wg = 13;
-    dir = 'y';
-    mode_num = 1;
+    epsilon_wg = 8;
+    dir = 'y+';
+    mode_num = 3;
     wg_dims = [1e9 8];
     
     if dir(1) == 'y'
@@ -28,7 +28,7 @@
     epsilon = {ones(dims), ones(dims), ones(dims)};
     epsilon = add_planar(epsilon, 6, dims(3)/2, {my_rectangle, my_waveguide});
 
-    [s_prim, s_dual] = stretched_coordinates(omega, dims, [10 10 0]);
+    [s_prim, s_dual] = stretched_coordinates(omega, dims, [0 10 0]);
 
     % temp = mu;
 %     for k = 1 : 3
@@ -71,9 +71,12 @@
     % Calculate the radiant power at every y-plane.
     for k = 1 : dims(2)
         avg_Hx = 0.5 * (H{1}(:,k,1) + H{1}(:,mod(k-2,dims(2))+1,1));
-        p(k) = dot(E{3}(:,k,1), avg_Hx);
+        avg_Hz = 0.5 * (H{3}(:,k,1) + H{3}(:,mod(k-2,dims(2))+1,1));
+        p(k) = dot(E{3}(:,k,1), avg_Hx) + dot(E{1}(:,k,1), avg_Hz);
     end
-    subplot(2, 3, 1:2); plot(abs(p));
+    subplot(2, 3, 4:5); plot(abs(p));
+
+    pow = [mean(abs(p(10:30))); mean(abs(p(50:70)))];
 
 
     % solve_waveguide_mode(omega, s_prim(2:3), s_dual(2:3), eps_wg, 2);

@@ -1,6 +1,6 @@
 %% solve_waveguide_mode_example_2D
 
-    omega = 0.16;
+    omega = 0.3;
     dims = [80 80 1];
     epsilon_wg = 13;
     dir = 'y';

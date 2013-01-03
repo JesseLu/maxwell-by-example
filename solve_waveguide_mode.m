@@ -131,7 +131,10 @@ function [beta, E, H, J] = solve_waveguide_mode(omega, s_prim, s_dual, ...
     beta = i * sqrt(lambda);
     beta = sign(real(beta)) * beta; % Force real part of beta to be positive.
 
-    % TODO: Perform correction on beta.
+    % Perform correction on beta.
+    beta
+    beta_corr = 2*sin(real(beta)/2) - real(beta);
+    beta = beta + 2 * beta_corr;
 
     % Fields.
     [E, H, J_small, E_err, H_err] = get_wg_fields(beta, v);
